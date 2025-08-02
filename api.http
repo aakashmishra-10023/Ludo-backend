@@ -1,0 +1,518 @@
+### LUDO Game API Testing Collection
+
+# Base URL - Replace with your Firebase project URL
+@baseUrl = https://your-firebase-project.firebaseio.com
+@authToken = your_firebase_auth_token_here
+
+### Authentication Endpoints
+
+# Anonymous Sign In
+POST {{baseUrl}}/auth/anonymous
+Content-Type: application/json
+
+###
+
+# User Registration
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "displayName": "Test Player",
+  "profilePicture": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+}
+
+###
+
+# User Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+
+### Game Room Management
+
+# Create Game Room
+POST {{baseUrl}}/rooms
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "roomId": "Room1234",
+  "gameType": "classic",
+  "maxPlayers": 4,
+  "entryAmount": 100,
+  "isPrivate": false,
+  "createdBy": "user_uid",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+
+###
+
+# Join Game Room
+POST {{baseUrl}}/rooms/Room1234/join
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "playerId": "user_uid",
+  "playerName": "Player Name",
+  "playerColor": "red",
+  "isBot": false
+}
+
+###
+
+# Get Room Details
+GET {{baseUrl}}/rooms/Room1234
+Authorization: Bearer {{authToken}}
+
+###
+
+# Leave Room
+DELETE {{baseUrl}}/rooms/Room1234/players/user_uid
+Authorization: Bearer {{authToken}}
+
+###
+
+# List Available Rooms
+GET {{baseUrl}}/rooms?status=waiting&gameType=classic&limit=20
+Authorization: Bearer {{authToken}}
+
+###
+
+### Game State Management
+
+# Start Game
+POST {{baseUrl}}/rooms/Room1234/start
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get Game State
+GET {{baseUrl}}/rooms/Room1234/game
+Authorization: Bearer {{authToken}}
+
+###
+
+# Roll Dice
+POST {{baseUrl}}/rooms/Room1234/dice/roll
+Authorization: Bearer {{authToken}}
+
+{
+  "playerId": "user_uid",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+
+###
+
+# Move Piece
+POST {{baseUrl}}/rooms/Room1234/move
+Authorization: Bearer {{authToken}}
+
+{
+  "playerId": "user_uid",
+  "pieceId": "red_piece_1",
+  "targetPosition": 15,
+  "diceValue": 6
+}
+
+###
+
+# Skip Turn
+POST {{baseUrl}}/rooms/Room1234/skip
+Authorization: Bearer {{authToken}}
+
+{
+  "playerId": "user_uid",
+  "reason": "no_valid_moves"
+}
+
+###
+
+# End Game
+POST {{baseUrl}}/rooms/Room1234/end
+Authorization: Bearer {{authToken}}
+
+{
+  "winnerId": "user_uid",
+  "finalScore": {
+    "player1": 100,
+    "player2": 50,
+    "player3": 25,
+    "player4": 0
+  }
+}
+
+###
+
+### Player Management
+
+# Get Player Profile
+GET {{baseUrl}}/players/user_uid
+Authorization: Bearer {{authToken}}
+
+###
+
+# Update Player Profile
+PUT {{baseUrl}}/players/user_uid
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "displayName": "Updated Player Name",
+  "profilePicture": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+  "preferences": {
+    "soundEnabled": true,
+    "musicEnabled": false,
+    "language": "en"
+  }
+}
+
+###
+
+# Get Player Statistics
+GET {{baseUrl}}/players/user_uid/statistics
+Authorization: Bearer {{authToken}}
+
+###
+
+# Set Player Ready Status
+POST {{baseUrl}}/rooms/Room1234/players/user_uid/ready
+Authorization: Bearer {{authToken}}
+
+{
+  "isReady": true
+}
+
+###
+
+# Player Disconnect
+POST {{baseUrl}}/rooms/Room1234/players/user_uid/disconnect
+Authorization: Bearer {{authToken}}
+
+###
+
+### Game Rules API
+
+# Get Game Rules
+GET {{baseUrl}}/rules/classic
+
+###
+
+# Validate Move
+POST {{baseUrl}}/rules/validate-move
+Content-Type: application/json
+
+{
+  "gameType": "classic",
+  "currentPosition": 10,
+  "targetPosition": 15,
+  "diceValue": 5,
+  "pieceState": "in_play"
+}
+
+###
+
+### Leaderboard and Statistics
+
+# Get Global Leaderboard
+GET {{baseUrl}}/leaderboard?type=global&limit=100
+
+###
+
+# Get Friend Leaderboard
+GET {{baseUrl}}/leaderboard/friends
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get Game Statistics
+GET {{baseUrl}}/statistics/games
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get Player Achievements
+GET {{baseUrl}}/players/user_uid/achievements
+Authorization: Bearer {{authToken}}
+
+###
+
+### Social Features
+
+# Add Friend
+POST {{baseUrl}}/friends/add
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "friendId": "friend_uid",
+  "message": "Let's play Ludo together!"
+}
+
+###
+
+# Accept Friend Request
+POST {{baseUrl}}/friends/accept/request_id
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get Friends List
+GET {{baseUrl}}/friends
+Authorization: Bearer {{authToken}}
+
+###
+
+# Send Game Invitation
+POST {{baseUrl}}/invitations/send
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "friendId": "friend_uid",
+  "roomId": "Room1234",
+  "message": "Join my Ludo game!"
+}
+
+###
+
+# Accept Game Invitation
+POST {{baseUrl}}/invitations/invitation_id/accept
+Authorization: Bearer {{authToken}}
+
+###
+
+### Virtual Currency and Shop
+
+# Get Player Balance
+GET {{baseUrl}}/players/user_uid/balance
+Authorization: Bearer {{authToken}}
+
+###
+
+# Purchase Virtual Currency
+POST {{baseUrl}}/purchases/coins
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "packageId": "coins_1000",
+  "amount": 1000,
+  "price": 0.99,
+  "currency": "USD"
+}
+
+###
+
+# Get Shop Items
+GET {{baseUrl}}/shop/items
+Authorization: Bearer {{authToken}}
+
+###
+
+# Purchase Shop Item
+POST {{baseUrl}}/shop/purchase
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "itemId": "custom_dice_red",
+  "currency": "coins",
+  "amount": 500
+}
+
+###
+
+### Webhook Endpoints
+
+# Game Events Webhook
+POST {{baseUrl}}/webhooks/game-events
+Content-Type: application/json
+
+{
+  "event": "game_ended",
+  "roomId": "Room1234",
+  "data": {
+    "winner": "user_uid",
+    "duration": 1800,
+    "players": ["player1", "player2", "player3", "player4"]
+  }
+}
+
+###
+
+### Testing Endpoints
+
+# Health Check
+GET {{baseUrl}}/health
+
+###
+
+# Create Test Game Room
+POST {{baseUrl}}/test/room
+Content-Type: application/json
+
+{
+  "roomId": "test_room",
+  "players": 4,
+  "gameType": "classic"
+}
+
+###
+
+### Firebase Realtime Database Examples
+
+# Get Room Data
+GET {{baseUrl}}/LudoRooms/Room1234.json
+
+###
+
+# Update Room Status
+PATCH {{baseUrl}}/LudoRooms/Room1234.json
+Content-Type: application/json
+
+{
+  "gameStatus": "started",
+  "currentPlayer": "player1",
+  "lastUpdated": "2024-01-15T10:30:00Z"
+}
+
+###
+
+# Add Player to Room
+PATCH {{baseUrl}}/LudoRooms/Room1234/players.json
+Content-Type: application/json
+
+{
+  "player2": {
+    "uid": "user_uid_2",
+    "name": "Player 2",
+    "color": "green",
+    "isReady": false
+  }
+}
+
+###
+
+# Update Game State
+PATCH {{baseUrl}}/LudoRooms/Room1234/gameState.json
+Content-Type: application/json
+
+{
+  "currentTurn": "player1",
+  "diceValue": 6,
+  "pieces": {
+    "red": {
+      "piece1": {"position": 0, "isHome": true},
+      "piece2": {"position": 0, "isHome": true},
+      "piece3": {"position": 0, "isHome": true},
+      "piece4": {"position": 0, "isHome": true}
+    }
+  }
+}
+
+###
+
+### Environment Variables
+
+# Development Environment
+@devBaseUrl = https://dev-ludo-game.firebaseio.com
+@devAuthToken = dev_firebase_token
+
+# Production Environment
+@prodBaseUrl = https://prod-ludo-game.firebaseio.com
+@prodAuthToken = prod_firebase_token
+
+# Test Environment
+@testBaseUrl = https://test-ludo-game.firebaseio.com
+@testAuthToken = test_firebase_token
+
+### Example Room Creation with Full Data
+
+# Create Complete Game Room
+POST {{baseUrl}}/rooms
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "roomId": "Room5678",
+  "gameType": "classic",
+  "maxPlayers": 4,
+  "entryAmount": 200,
+  "isPrivate": true,
+  "password": "ludo123",
+  "createdBy": "user_uid",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "settings": {
+    "timeLimit": 30,
+    "allowBots": true,
+    "autoStart": true,
+    "maxBots": 2
+  },
+  "players": {
+    "player1": {
+      "uid": "user_uid",
+      "name": "Host Player",
+      "color": "red",
+      "isReady": true,
+      "isHost": true,
+      "joinedAt": "2024-01-15T10:30:00Z"
+    }
+  },
+  "gameState": {
+    "status": "waiting",
+    "currentTurn": null,
+    "diceValue": null,
+    "pieces": {
+      "red": {
+        "piece1": {"position": 0, "isHome": true, "isAlive": false},
+        "piece2": {"position": 0, "isHome": true, "isAlive": false},
+        "piece3": {"position": 0, "isHome": true, "isAlive": false},
+        "piece4": {"position": 0, "isHome": true, "isAlive": false}
+      },
+      "green": {
+        "piece1": {"position": 0, "isHome": true, "isAlive": false},
+        "piece2": {"position": 0, "isHome": true, "isAlive": false},
+        "piece3": {"position": 0, "isHome": true, "isAlive": false},
+        "piece4": {"position": 0, "isHome": true, "isAlive": false}
+      },
+      "blue": {
+        "piece1": {"position": 0, "isHome": true, "isAlive": false},
+        "piece2": {"position": 0, "isHome": true, "isAlive": false},
+        "piece3": {"position": 0, "isHome": true, "isAlive": false},
+        "piece4": {"position": 0, "isHome": true, "isAlive": false}
+      },
+      "yellow": {
+        "piece1": {"position": 0, "isHome": true, "isAlive": false},
+        "piece2": {"position": 0, "isHome": true, "isAlive": false},
+        "piece3": {"position": 0, "isHome": true, "isAlive": false},
+        "piece4": {"position": 0, "isHome": true, "isAlive": false}
+      }
+    },
+    "board": {
+      "safeSpots": [1, 9, 14, 22, 27, 35, 40, 48],
+      "homeStarts": {
+        "red": 0,
+        "green": 13,
+        "blue": 26,
+        "yellow": 39
+      },
+      "winnerPaths": {
+        "red": [52, 53, 54, 55, 56, 57],
+        "green": [58, 59, 60, 61, 62, 63],
+        "blue": [64, 65, 66, 67, 68, 69],
+        "yellow": [70, 71, 72, 73, 74, 75]
+      }
+    }
+  }
+}
+
+### 
