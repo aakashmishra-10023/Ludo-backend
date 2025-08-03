@@ -1,8 +1,8 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/User";
-import { env } from "../config/envConsts";
+import User, { IUser } from "../models/user.schema";
+import { env } from "../config/env.config";
 
 export const registerSchema = z.object({
   email: z.string().email(),

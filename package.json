@@ -3,13 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
-  "author": "Aakash Mishra",
-  "type": "module",
-  "main": "dist/server.js",
+  "author": "Abhijeet Kumar",
+  "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "ts-node server.ts"
+    "start": "tsc && node ./dist/src/index.js",
+    "dev": "nodemon --exec ts-node ./src/index.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -38,6 +37,7 @@
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.1.0",
     "@types/winston": "^2.4.4",
+    "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

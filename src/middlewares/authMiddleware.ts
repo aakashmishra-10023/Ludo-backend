@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import { env } from "../config/envConsts";
+import { env } from "../config/env.config";
 
 export const authMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
