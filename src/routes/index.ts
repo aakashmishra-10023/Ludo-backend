@@ -1,5 +1,5 @@
 import { Router } from "express";
-import userRoutes from "./userRoutes";
+// import userRoutes from "./userRoutes";
 import gameRoutes from "./gameRoutes";
 import roomRoutes from "./roomRoutes";
 import playerRoutes from "./playerRoutes";
@@ -10,7 +10,7 @@ import shopRoutes from "./shopRoutes";
 
 const router = Router();
 
-router.use(userRoutes);
+// router.use(userRoutes);
 router.use(gameRoutes);
 router.use(roomRoutes);
 router.use(playerRoutes);

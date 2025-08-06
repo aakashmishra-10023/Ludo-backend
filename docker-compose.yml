@@ -1,0 +1,14 @@
+services:
+  app:
+    image: 686585749657.dkr.ecr.ap-south-1.amazonaws.com/ludo-backend:latest
+    container_name: ludo-backend
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:80 # Map application port 3000 to host port 80
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
