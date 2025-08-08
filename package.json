@@ -11,6 +11,7 @@
     "dev": "nodemon --exec ts-node ./src/server.ts"
   },
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -19,9 +20,12 @@
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
+    "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.5",
+    "redis": "^5.8.0",
     "socket.io": "^4.8.1",
+    "socket.io-redis": "^5.4.0",
     "winston": "^3.17.0",
     "zod": "^3.25.76"
   },
