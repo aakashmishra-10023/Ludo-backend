@@ -1,7 +1,7 @@
 import { createClient } from 'redis';
 import { env } from './env.config';
 
-const REDIS_URL = env.REDIS_URL;
+const REDIS_URL = env.REDIS_URL || 'redis://localhost:6379';
 
 class RedisClient {
   private client: ReturnType<typeof createClient>;
