@@ -33,6 +33,7 @@ const MAX_PLAYERS = 4;
 
 export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomData): Promise<void> => {
   try {
+    console.log("Joining room handler invoked with data:", data);
     const { userId, username, avatarUrl, createNewRoom } = data;
     let { roomId } = data;
     
