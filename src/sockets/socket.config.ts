@@ -2,7 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { redisClient } from '../config/redis.config';
-import { handleJoinRoom } from './handlers/index';
+import { handleJoinRoom, handleRollDice } from './handlers/index';
 import { socketAuth, requireAuth } from '../middlewares/socketAuth.middleware';
 
 export class SocketService {
@@ -50,6 +50,10 @@ export class SocketService {
             userId: socket.data.user.id,
             username: data.username || `Player_${socket.id.substring(0, 5)}`
           });
+        });
+
+        socket.on('roll_dice', (data) => {
+          handleRollDice(socket, this.io, data);
         });
         
         socket.on('disconnect', () => {

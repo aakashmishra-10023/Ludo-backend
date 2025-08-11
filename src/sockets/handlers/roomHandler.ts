@@ -19,7 +19,7 @@ interface Player {
   position?: number;
 }
 
-interface GameRoom {
+export interface GameRoom {
   roomId: string;
   players: Player[];
   gameStarted: boolean;
