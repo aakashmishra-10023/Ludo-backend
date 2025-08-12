@@ -1,5 +1,6 @@
 
 export const authContext = '/auth';
+export const appContext = '/app';
 
 export enum SuccessMessage {
     SOCIAL_SIGNIN_SUCCESS = "Social Sign In Success",
