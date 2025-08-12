@@ -26,7 +26,7 @@ class RedisClient {
     return this.client;
   }
 
-  async set(key: string, value: any, expireTime?: number): Promise<string | null> {
+  async set(key: string, value: any, expireTime?: number) {
     try {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       if (expireTime) {
@@ -39,12 +39,12 @@ class RedisClient {
     }
   }
 
-  async get(key: string): Promise<any> {
+  async get(key: string) {
     try {
       const value = await this.client.get(key);
       if (value) {
         try {
-          return JSON.parse(value);
+          return JSON.parse(value.toString());
         } catch {
           return value;
         }
@@ -56,7 +56,7 @@ class RedisClient {
     }
   }
 
-  async delete(key: string): Promise<number> {
+  async delete(key: string){
     try {
       return await this.client.del(key);
     } catch (error) {

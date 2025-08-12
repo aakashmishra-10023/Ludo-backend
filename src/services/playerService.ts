@@ -32,8 +32,8 @@ export async function getPlayerStatistics(playerId: string) {
   return player.statistics || {};
 }
 
-export async function getPlayerAchievements(playerId: string) {
-  const player = await Player.findOne({ playerId });
-  if (!player) throw new Error("Player not found");
-  return player.achievements || [];
-}
+// export async function getPlayerAchievements(playerId: string) {
+//   const player = await Player.findOne({ playerId });
+//   if (!player) throw new Error("Player not found");
+//   return player.achievements || [];
+// }

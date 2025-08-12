@@ -6,7 +6,7 @@ export interface IPlayer extends Document {
   profilePicture?: string;
   preferences?: any;
   statistics?: any;
-  achievements?: any[];
+  // achievements?: any[];
   balance?: any;
 }
 
@@ -16,7 +16,7 @@ const PlayerSchema = new Schema<IPlayer>({
   profilePicture: { type: String },
   preferences: { type: Schema.Types.Mixed, default: {} },
   statistics: { type: Schema.Types.Mixed, default: {} },
-  achievements: { type: [Schema.Types.Mixed], default: [] },
+  // achievements: { type: [Schema.Types.Mixed], default: [] },
   balance: { type: Schema.Types.Mixed, default: {} },
 });
 
