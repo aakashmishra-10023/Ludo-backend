@@ -2,7 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { redisClient } from '../config/redis.config';
-import { handleJoinRoom, handleRollDice } from './handlers/index';
+import { handleJoinRoom, handleMovePiece, handleRollDice } from './handlers/index';
 import { socketAuth, requireAuth } from '../middlewares/socketAuth.middleware';
 
 export class SocketService {
@@ -49,6 +49,13 @@ export class SocketService {
             ...data,
             userId: socket.data.user.id,
             username: data.username || `Player_${socket.id.substring(0, 5)}`
+          });
+        });
+
+        socket.on('move_piece', (data) => {
+          handleMovePiece(socket, this.io, {
+            ...data,
+            userId: socket.data.user.id
           });
         });
 

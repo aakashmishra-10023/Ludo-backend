@@ -1,39 +1,12 @@
 import { Server, Socket } from 'socket.io';
 import { redisClient } from '../../config/redis.config';
-
-interface JoinRoomData {
-  roomId?: string;
-  userId: string;
-  username: string;
-  avatarUrl?: string;
-  createNewRoom?: boolean;
-}
-
-interface Player {
-  userId: string;
-  username: string;
-  socketId: string;
-  avatarUrl?: string;
-  color?: string;
-  isReady?: boolean;
-  position?: number;
-}
-
-export interface GameRoom {
-  roomId: string;
-  players: Player[];
-  gameStarted: boolean;
-  createdAt: number;
-  maxPlayers: number;
-  gameState?: any;
-}
+import { GameRoom, JoinRoomData, Player } from 'src/interfaces/room.interface';
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
 const MAX_PLAYERS = 4;
 
 export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomData): Promise<void> => {
   try {
-    console.log("Joining room handler invoked with data:", data);
     const { userId, username, avatarUrl, createNewRoom } = data;
     let { roomId } = data;
     
