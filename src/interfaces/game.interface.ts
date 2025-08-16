@@ -1,3 +1,5 @@
+import { GamePhase } from "../enums/game.enum";
+
 export interface RollDiceData {
     roomId: string;
 }
@@ -22,5 +24,5 @@ export interface GameState {
     pieces: Record<string, PiecePosition[]>; 
     turnOrder: string[];   
     currentPlayerIndex: number; 
-    gamePhase: 'rolling' | 'moving' | 'gameOver';
+    gamePhase: GamePhase;
 }

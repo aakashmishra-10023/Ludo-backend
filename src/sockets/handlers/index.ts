@@ -1,4 +1,4 @@
-export { handleConnection } from './connectionHandler';
-export { handleJoinRoom, startGame } from './roomHandler';
-export { handleDisconnect } from './disconnectionHandler';
-export { handleRollDice, handleMovePiece } from './gameHandler';
+export { handleConnection } from './connection.handler';
+export { handleJoinRoom, startGame } from './room.handler';
+export { handleDisconnect } from './disconnection.handler';
+export { handleRollDice, handleMovePiece } from './game.handler';

@@ -1,3 +1,5 @@
+import { GameState } from "./game.interface";
+
 export interface JoinRoomData {
     roomId?: string;
     userId: string;
@@ -22,5 +24,5 @@ export interface GameRoom {
     gameStarted: boolean;
     createdAt: number;
     maxPlayers: number;
-    gameState?: any;
+    gameState?: GameState;
 }

@@ -1,6 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import { redisClient } from '../../config/redis.config';
-import { GameRoom, JoinRoomData, Player } from 'src/interfaces/room.interface';
+import { GameRoom, JoinRoomData, Player } from '../../interfaces/room.interface';
+import { GameState, PiecePosition } from '../../interfaces/game.interface';
+import { GamePhase } from '../../enums/game.enum';
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
 const MAX_PLAYERS = 4;
@@ -114,28 +116,27 @@ export const startGame = async (io: Server, roomId: string): Promise<void> => {
       return;
     }
     
-    const gameState: {
-      currentTurn: number;
-      dice: number | null;
-      pieces: Record<string, Array<{id: number, position: string}>>;
-      status: string;
-      lastUpdated: number;
-    } = {
-      currentTurn: 0,
-      dice: null,
-      pieces: {},
-      status: 'started',
-      lastUpdated: Date.now()
-    };
-    
-    room.players.forEach((player: Player) => {
-      gameState.pieces[player.userId] = [
-        { id: 0, position: 'home' },
-        { id: 1, position: 'home' },
-        { id: 2, position: 'home' },
-        { id: 3, position: 'home' }
+    const turnOrder = room.players.map((player: Player) => player.userId);
+    const pieces: Record<string, PiecePosition[]> = {};
+    turnOrder.forEach((userId: string) => {
+      pieces[userId] = [
+        { id: 0, position: -1, isHome: true, isFinished: false },
+        { id: 1, position: -1, isHome: true, isFinished: false },
+        { id: 2, position: -1, isHome: true, isFinished: false },
+        { id: 3, position: -1, isHome: true, isFinished: false }
       ];
     });
+
+    const gameState: GameState = {
+      currentTurn: turnOrder[0],
+      diceValue: 0,
+      pieces,
+      turnOrder,
+      currentPlayerIndex: 0,
+      gamePhase: GamePhase.Rolling
+    };
+    
+
     
     room.gameStarted = true;
     room.gameState = gameState;

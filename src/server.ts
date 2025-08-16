@@ -4,7 +4,7 @@ import { appContext, authContext } from "./constants.ts/constants";
 import { env } from "./config/env.config";
 import { mongoConnection } from "./databases/mongodb/mongodb.connection";
 import { authRouter } from "./routes/auth.route";
-import { SocketService } from "./sockets/socket.config";
+import { SocketService } from "./sockets";
 import { appRouter } from "./routes/app.route";
 
 class App{
@@ -12,7 +12,6 @@ class App{
     private port!: string;
     private authContext!: string;
     private appContext!: string;
-    private socketService!: SocketService;
     
     constructor(){
         this.startApp();
@@ -44,7 +43,7 @@ class App{
  
     initServer(){
         const httpServer = createServer(this.app);        
-        this.socketService = new SocketService(httpServer);
+        new SocketService(httpServer);
         httpServer.listen(this.port, () => {
             console.log(`Server is running on port: ${this.port}`);
             console.log(`Socket.IO server initialized`);

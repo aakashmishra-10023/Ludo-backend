@@ -24,4 +24,4 @@ class SessionService {
     }
 }
 
-export const $sessionService = new SessionService();
+export const sessionService = new SessionService();

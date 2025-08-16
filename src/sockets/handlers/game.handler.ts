@@ -1,7 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import { redisClient } from '../../config/redis.config';
-import { GameRoom } from 'src/interfaces/room.interface';
-import { MovePieceData, PiecePosition, RollDiceData } from 'src/interfaces/game.interface';
+import { GameRoom, Player } from '../../interfaces/room.interface';
+import { MovePieceData, PiecePosition, RollDiceData } from '../../interfaces/game.interface';
+import { GamePhase } from '../../enums/game.enum';
 
 export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceData): Promise<void> => {
   try {
@@ -26,21 +27,24 @@ export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceD
       return;
     }
 
-    const currentPlayer = room.players[room.gameState.currentTurn];
-    if (currentPlayer.userId !== userId) {
+    if (room.gameState.currentTurn !== userId) {
       socket.emit('error', { message: 'It is not your turn.' });
       return;
     }
 
-    if (room.gameState.dice !== null) {
+    if (room.gameState.gamePhase !== 'rolling') {
+      socket.emit('error', { message: 'Cannot roll dice right now.' });
+      return;
+    }
+
+    if (room.gameState.diceValue && room.gameState.diceValue > 0) {
       socket.emit('error', { message: 'Dice already rolled for this turn.' });
       return;
     }
 
     const diceValue = Math.floor(Math.random() * 6) + 1;
-
-    room.gameState.dice = diceValue;
-    room.gameState.lastUpdated = Date.now();
+    room.gameState.diceValue = diceValue;
+    room.gameState.gamePhase = GamePhase.Moving;
 
     await redisClient.set(`room:${roomId}`, room);
 
@@ -81,7 +85,7 @@ export const handleMovePiece = async (socket: Socket, io: Server, data: MovePiec
       return;
     }
 
-    if (room.gameState.gamePhase !== 'moving') {
+    if (room.gameState.gamePhase !== GamePhase.Moving) {
       socket.emit('error', { message: 'Cannot move now' });
       return;
     }
@@ -106,7 +110,8 @@ export const handleMovePiece = async (socket: Socket, io: Server, data: MovePiec
 
     await handleSpecialPositions(room, userId, piece, io);
 
-    room.gameState.gamePhase = 'rolling';
+    room.gameState.diceValue = 0;
+    room.gameState.gamePhase = GamePhase.Rolling;
 
     const currentPlayerIndex = room.gameState.turnOrder.indexOf(userId);
     const nextPlayerIndex = (currentPlayerIndex + 1) % room.gameState.turnOrder.length;
@@ -154,7 +159,7 @@ function calculateNewPosition(piece: PiecePosition, steps: number): { position: 
   return { position: newPosition, isHome: false, isFinished: false };
 }
 
-async function handleSpecialPositions(room: any, playerId: string, piece: PiecePosition, io: Server): Promise<void> {
+async function handleSpecialPositions(room: GameRoom, playerId: string, piece: PiecePosition, io: Server): Promise<void> {
   const safePositions = [0, 8, 13, 21, 26, 34, 39, 47];
   if (safePositions.includes(piece.position)) {
     return;
@@ -185,9 +190,10 @@ function checkWinCondition(pieces: PiecePosition[]): boolean {
   return pieces.every(piece => piece.isFinished);
 }
 
-async function handleWinCondition(room: any, winnerId: string, io: Server): Promise<void> {
-  room.gameState.gamePhase = 'gameOver';
-  room.gameState.winner = winnerId;
+async function handleWinCondition(room: GameRoom, winnerId: string, io: Server): Promise<void> {
+  room.gameState.gamePhase = GamePhase.GameOver;
+  room.gameState.diceValue = 0;
+  (room.gameState as any).winner = winnerId;
 
   await redisClient.set(`room:${room.roomId}`, room);
 
@@ -199,11 +205,11 @@ async function handleWinCondition(room: any, winnerId: string, io: Server): Prom
 
   await archiveGame(room);
 }
-async function archiveGame(room: any): Promise<void> {
+async function archiveGame(room: GameRoom): Promise<void> {
   setTimeout(async () => {
     await redisClient.delete(`room:${room.roomId}`);
     await Promise.all(
-      room.players.map((player: any) =>
+      room.players.map((player: Player) =>
         redisClient.delete(`user:${player.userId}:room`)
       )
     );
