@@ -13,13 +13,11 @@ export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceD
       return;
     }
 
-    const roomData = await redisClient.get(`room:${roomId}`);
-    if (!roomData) {
+    const room: GameRoom = await redisClient.get(`room:${roomId}`);
+    if (!room) {
       socket.emit('error', { message: 'Room not found.' });
       return;
     }
-
-    const room: GameRoom = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
 
     if (!room.gameStarted) {
       socket.emit('error', { message: 'Game has not started yet.' });
@@ -71,13 +69,11 @@ export const handleMovePiece = async (socket: Socket, io: Server, data: MovePiec
       return;
     }
 
-    const roomData: GameRoom = await redisClient.get(`room:${roomId}`);
-    if (!roomData) {
+    const room: GameRoom = await redisClient.get(`room:${roomId}`);
+    if (!room) {
       socket.emit('error', { message: 'Room not found' });
       return;
     }
-
-    const room: GameRoom = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
 
     if (room.gameState.currentTurn !== userId) {
       socket.emit('error', { message: 'Not your turn' });

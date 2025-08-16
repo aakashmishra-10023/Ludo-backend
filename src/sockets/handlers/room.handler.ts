@@ -38,15 +38,13 @@ export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomD
       };
     } 
     else {
-      const roomData = await redisClient.get(`room:${roomId}`);
+      const room: GameRoom = await redisClient.get(`room:${roomId}`);
       
-      if (!roomData) {
+      if (!room) {
         socket.emit('error', { message: 'Room does not exist' });
         return;
       }
-      
-      room = typeof roomData === 'string' ? JSON.parse(roomData) : roomData as GameRoom;
-      
+            
       if (room.players.length >= room.maxPlayers) {
         socket.emit('error', { message: 'Room is full' });
         return;
@@ -66,7 +64,7 @@ export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomD
       socketId: socket.id,
       avatarUrl: user.profilePicture || undefined,
       color: COLORS[room.players.length],
-      isReady: false,
+      isReady: true,
       position: room.players.length
     };
     
@@ -106,14 +104,12 @@ export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomD
 
 export const startGame = async (io: Server, roomId: string): Promise<void> => {
   try {
-    const roomData = await redisClient.get(`room:${roomId}`);
+    const room: GameRoom = await redisClient.get(`room:${roomId}`);
     
-    if (!roomData) {
+    if (!room) {
       console.error(`Room ${roomId} not found when trying to start game`);
       return;
     }
-    
-    const room = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
     
     if (room.gameStarted) {
       return;

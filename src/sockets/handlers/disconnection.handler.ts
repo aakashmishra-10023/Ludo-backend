@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { redisClient } from '../../config/redis.config';
+import { GameRoom } from '../../interfaces/room.interface';
 
 export const handleDisconnect = async (socket: Socket, io: Server): Promise<void> => {
   try {
@@ -24,15 +25,13 @@ export const handleDisconnect = async (socket: Socket, io: Server): Promise<void
     
     if (roomKey) {
       const roomId = roomKey;
-      const roomData = await redisClient.get(`room:${roomId}`);
+      const room: GameRoom = await redisClient.get(`room:${roomId}`);
       
-      if (roomData) {
-        const room = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
-        
+      if (room) {
         const playerIndex = room.players.findIndex((p: any) => p.userId === userId);
         if (playerIndex !== -1) {
           room.players[playerIndex].isOnline = false;
-          room.players[playerIndex].lastSeen = new Date().toISOString();
+          room.players[playerIndex].lastSeen = new Date();
           
           await redisClient.set(`room:${roomId}`, room);
           

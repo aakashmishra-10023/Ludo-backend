@@ -8,7 +8,6 @@ export interface RollDiceData {
 export interface MovePieceData {
     roomId: string;
     pieceId: number;    
-    steps: number;      
     userId: string;   
 }
 

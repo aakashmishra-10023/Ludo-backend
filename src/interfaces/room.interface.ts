@@ -15,6 +15,8 @@ export interface Player {
     color?: string;
     isReady?: boolean;
     position?: number;
+    isOnline?: boolean;
+    lastSeen?: Date;
 }
 
 export interface GameRoom {
