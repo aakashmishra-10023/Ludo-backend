@@ -3,17 +3,18 @@ import { redisClient } from '../../config/redis.config';
 import { GameRoom, JoinRoomData, Player } from '../../interfaces/room.interface';
 import { GameState, PiecePosition } from '../../interfaces/game.interface';
 import { GamePhase } from '../../enums/game.enum';
+import { userService } from '../../services/user.service';
 
 const COLORS = ['red', 'green', 'yellow', 'blue'];
 const MAX_PLAYERS = 4;
 
 export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomData): Promise<void> => {
   try {
-    const { userId, username, avatarUrl, createNewRoom } = data;
+    const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
     
-    if (!userId || !username) {
-      socket.emit('error', { message: 'User ID and username are required' });
+    if (!userId || !userName) {
+      socket.emit('error', { message: 'User ID and userName are required' });
       return;
     }
 
@@ -57,11 +58,13 @@ export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomD
       }
     }
     
+    const user = await userService.getUser(userId);
+    
     const player: Player = {
       userId,
-      username,
+      userName: user.userName ?? userName,
       socketId: socket.id,
-      avatarUrl: avatarUrl || undefined,
+      avatarUrl: user.profilePicture || undefined,
       color: COLORS[room.players.length],
       isReady: false,
       position: room.players.length
@@ -86,14 +89,14 @@ export const handleJoinRoom = async (socket: Socket, io: Server, data: JoinRoomD
       roomId,
       player,
       players: room.players,
-      message: `${username} joined the room`
+      message: `${player.userName} joined the room`
     });
     
     if (room.players.length === room.maxPlayers) {
       await startGame(io, roomId);
     }
     
-    console.log(`User ${userId} (${username}) joined room ${roomId}. Current players: ${room.players.length}`);
+    console.log(`User ${userId} (${userName}) joined room ${roomId}. Current players: ${room.players.length}`);
     
   } catch (error) {
     console.error('Error in join room handler:', error);

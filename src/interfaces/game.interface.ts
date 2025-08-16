@@ -2,6 +2,7 @@ import { GamePhase } from "../enums/game.enum";
 
 export interface RollDiceData {
     roomId: string;
+    userId: string;
 }
 
 export interface MovePieceData {

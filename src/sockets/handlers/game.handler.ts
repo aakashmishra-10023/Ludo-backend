@@ -6,8 +6,7 @@ import { GamePhase } from '../../enums/game.enum';
 
 export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceData): Promise<void> => {
   try {
-    const { roomId } = data;
-    const userId = socket.data.user?.id;
+    const { roomId, userId } = data;
 
     if (!roomId || !userId) {
       socket.emit('error', { message: 'Room ID and User ID are required.' });
@@ -65,20 +64,20 @@ export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceD
 
 export const handleMovePiece = async (socket: Socket, io: Server, data: MovePieceData): Promise<void> => {
   try {
-    const { roomId, pieceId, steps, userId } = data;
+    const { roomId, pieceId, userId } = data;
 
-    if (!roomId || !pieceId || !steps || !userId) {
+    if (!roomId || !pieceId || !userId) {
       socket.emit('error', { message: 'Invalid move data' });
       return;
     }
 
-    const roomData = await redisClient.get(`room:${roomId}`);
+    const roomData: GameRoom = await redisClient.get(`room:${roomId}`);
     if (!roomData) {
       socket.emit('error', { message: 'Room not found' });
       return;
     }
 
-    const room = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
+    const room: GameRoom = typeof roomData === 'string' ? JSON.parse(roomData) : roomData;
 
     if (room.gameState.currentTurn !== userId) {
       socket.emit('error', { message: 'Not your turn' });
@@ -98,12 +97,12 @@ export const handleMovePiece = async (socket: Socket, io: Server, data: MovePiec
 
     const piece = playerPieces[pieceId];
 
-    if (!isValidMove(piece, steps, playerPieces)) {
+    if (!isValidMove(piece, room.gameState.diceValue, playerPieces)) {
       socket.emit('error', { message: 'Invalid move' });
       return;
     }
 
-    const newPosition = calculateNewPosition(piece, steps);
+    const newPosition = calculateNewPosition(piece, room.gameState.diceValue);
     piece.position = newPosition.position;
     piece.isHome = newPosition.isHome;
     piece.isFinished = newPosition.isFinished;

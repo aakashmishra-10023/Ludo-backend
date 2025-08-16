@@ -3,14 +3,13 @@ import { GameState } from "./game.interface";
 export interface JoinRoomData {
     roomId?: string;
     userId: string;
-    username: string;
-    avatarUrl?: string;
-    createNewRoom?: boolean;
+    userName: string;
+    createNewRoom: boolean;
 }
 
 export interface Player {
     userId: string;
-    username: string;
+    userName: string;
     socketId: string;
     avatarUrl?: string;
     color?: string;

@@ -48,7 +48,7 @@ export class SocketService {
           handleJoinRoom(socket, this.io, {
             ...data,
             userId: socket.data.user.id,
-            username: data.username || `Player_${socket.id.substring(0, 5)}`
+            userName: `Player_${socket.id.substring(0, 5)}`
           });
         });
 
@@ -60,7 +60,10 @@ export class SocketService {
         });
 
         socket.on('roll_dice', (data) => {
-          handleRollDice(socket, this.io, data);
+          handleRollDice(socket, this.io, {
+            ...data,
+            userId: socket.data.user.id
+          });
         });
         
         socket.on('disconnect', () => {

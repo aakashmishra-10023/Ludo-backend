@@ -15,7 +15,7 @@ class AuthService {
                 const session = sessionService.create(user._id.toString(), UserType.Customer);
                 return session;
             } else {
-                const newUser = await UserModel.create({ name, email, socialType, socialId });
+                const newUser = await UserModel.create({ userName: name, email, socialType, socialId });
                 const session = sessionService.create(newUser._id.toString(), UserType.Customer);
                 return session;
             }
