@@ -27,9 +27,10 @@ export const handleJoinRoom = async (
   data: JoinRoomData
 ): Promise<void> => {
   try {
+    console.log("join room handler data type ====================>", typeof data);
+    console.log("join room handler ====================>",  typeof data === "string" ? JSON.parse(data) : data);
     const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
-    console.log("join room handler ====================>", data);
     if (!userId || !userName) {
       socket.emit("error", { message: "User ID and userName are required" });
       return;
