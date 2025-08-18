@@ -27,10 +27,12 @@ export const handleJoinRoom = async (
   data: JoinRoomData
 ): Promise<void> => {
   try {
-    console.log("join room handler data type ====================>", typeof data);
-    console.log("join room handler ====================>",  typeof data === "string" ? JSON.parse(data) : data);
     const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
+    console.log("join room handler ====================>", userId, userName, createNewRoom, roomId);
+    const str = Object.values(data).join("");
+    const parsedData = JSON.parse(str);
+    console.log("join room handler parsed data ====================>", parsedData);
     if (!userId || !userName) {
       socket.emit("error", { message: "User ID and userName are required" });
       return;
@@ -74,7 +76,7 @@ export const handleJoinRoom = async (
     }
 
     const user = await userService.getUser(userId);
-
+    console.log("user ====================>", user);
     const player: Player = {
       userId,
       userName: user.userName ?? userName,
