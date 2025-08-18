@@ -1,41 +1,49 @@
-import { Server, Socket } from 'socket.io';
-import { redisClient } from '../../config/redis.config';
-import { GameRoom, Player } from '../../interfaces/room.interface';
-import { MovePieceData, PiecePosition, RollDiceData } from '../../interfaces/game.interface';
-import { GamePhase } from '../../enums/game.enum';
+import { Server, Socket } from "socket.io";
+import { redisClient } from "../../config/redis.config";
+import { GameRoom, Player } from "../../interfaces/room.interface";
+import {
+  MovePieceData,
+  PiecePosition,
+  RollDiceData,
+} from "../../interfaces/game.interface";
+import { GamePhase } from "../../enums/game.enum";
 
-export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceData): Promise<void> => {
+export const handleRollDice = async (
+  socket: Socket,
+  io: Server,
+  data: RollDiceData
+): Promise<void> => {
   try {
     const { roomId, userId } = data;
 
     if (!roomId || !userId) {
-      socket.emit('error', { message: 'Room ID and User ID are required.' });
+      socket.emit("error", { message: "Room ID and User ID are required." });
       return;
     }
 
     const room: GameRoom = await redisClient.get(`room:${roomId}`);
     if (!room) {
-      socket.emit('error', { message: 'Room not found.' });
+      socket.emit("error", { message: "Room not found." });
       return;
     }
 
     if (!room.gameStarted) {
-      socket.emit('error', { message: 'Game has not started yet.' });
+      socket.emit("error", { message: "Game has not started yet." });
       return;
     }
 
     if (room.gameState.currentTurn !== userId) {
-      socket.emit('error', { message: 'It is not your turn.' });
+      socket.emit("error", { message: "It is not your turn." });
       return;
     }
 
-    if (room.gameState.gamePhase !== 'rolling') {
-      socket.emit('error', { message: 'Cannot roll dice right now.' });
+    if (room.gameState.gamePhase !== "rolling") {
+      socket.emit("error", { message: "Cannot roll dice right now." });
       return;
     }
 
     if (room.gameState.diceValue && room.gameState.diceValue > 0) {
-      socket.emit('error', { message: 'Dice already rolled for this turn.' });
+      socket.emit("error", { message: "Dice already rolled for this turn." });
       return;
     }
 
@@ -45,7 +53,7 @@ export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceD
 
     await redisClient.set(`room:${roomId}`, room);
 
-    io.to(roomId).emit('dice_result', {
+    io.to(roomId).emit("dice_result", {
       roomId,
       userId,
       diceValue,
@@ -53,48 +61,53 @@ export const handleRollDice = async (socket: Socket, io: Server, data: RollDiceD
     });
 
     console.log(`User ${userId} in room ${roomId} rolled a ${diceValue}`);
-
   } catch (error) {
-    console.error('Error in handleRollDice:', error);
-    socket.emit('error', { message: 'An error occurred while rolling the dice.' });
+    console.error("Error in handleRollDice:", error);
+    socket.emit("error", {
+      message: "An error occurred while rolling the dice.",
+    });
   }
 };
 
-export const handleMovePiece = async (socket: Socket, io: Server, data: MovePieceData): Promise<void> => {
+export const handleMovePiece = async (
+  socket: Socket,
+  io: Server,
+  data: MovePieceData
+): Promise<void> => {
   try {
     const { roomId, pieceId, userId } = data;
 
     if (!roomId || !pieceId || !userId) {
-      socket.emit('error', { message: 'Invalid move data' });
+      socket.emit("error", { message: "Invalid move data" });
       return;
     }
 
     const room: GameRoom = await redisClient.get(`room:${roomId}`);
     if (!room) {
-      socket.emit('error', { message: 'Room not found' });
+      socket.emit("error", { message: "Room not found" });
       return;
     }
 
     if (room.gameState.currentTurn !== userId) {
-      socket.emit('error', { message: 'Not your turn' });
+      socket.emit("error", { message: "Not your turn" });
       return;
     }
 
     if (room.gameState.gamePhase !== GamePhase.Moving) {
-      socket.emit('error', { message: 'Cannot move now' });
+      socket.emit("error", { message: "Cannot move now" });
       return;
     }
 
     const playerPieces = room.gameState.pieces[userId];
     if (!playerPieces || pieceId >= playerPieces.length) {
-      socket.emit('error', { message: 'Invalid piece' });
+      socket.emit("error", { message: "Invalid piece" });
       return;
     }
 
     const piece = playerPieces[pieceId];
 
     if (!isValidMove(piece, room.gameState.diceValue, playerPieces)) {
-      socket.emit('error', { message: 'Invalid move' });
+      socket.emit("error", { message: "Invalid move" });
       return;
     }
 
@@ -109,38 +122,45 @@ export const handleMovePiece = async (socket: Socket, io: Server, data: MovePiec
     room.gameState.gamePhase = GamePhase.Rolling;
 
     const currentPlayerIndex = room.gameState.turnOrder.indexOf(userId);
-    const nextPlayerIndex = (currentPlayerIndex + 1) % room.gameState.turnOrder.length;
+    const nextPlayerIndex =
+      (currentPlayerIndex + 1) % room.gameState.turnOrder.length;
     room.gameState.currentTurn = room.gameState.turnOrder[nextPlayerIndex];
     room.gameState.currentPlayerIndex = nextPlayerIndex;
 
     await redisClient.set(`room:${roomId}`, room);
 
-    io.to(roomId).emit('piece_moved', {
+    io.to(roomId).emit("piece_moved", {
       roomId,
       userId,
       pieceId,
       newPosition: piece,
       nextPlayer: room.gameState.currentTurn,
-      gameState: room.gameState
+      gameState: room.gameState,
     });
 
     if (checkWinCondition(playerPieces)) {
       await handleWinCondition(room, userId, io);
     }
-
   } catch (error) {
-    console.error('Error in move_piece handler:', error);
-    socket.emit('error', { message: 'Error processing move' });
+    console.error("Error in move_piece handler:", error);
+    socket.emit("error", { message: "Error processing move" });
   }
 };
 
-function isValidMove(piece: PiecePosition, steps: number, allPieces: PiecePosition[]): boolean {
+function isValidMove(
+  piece: PiecePosition,
+  steps: number,
+  allPieces: PiecePosition[]
+): boolean {
   if (piece.isFinished) return false;
   if (piece.isHome && steps !== 6) return false;
   if (!piece.isHome && piece.position + steps > 56) return false;
 }
 
-function calculateNewPosition(piece: PiecePosition, steps: number): { position: number; isHome: boolean; isFinished: boolean } {
+function calculateNewPosition(
+  piece: PiecePosition,
+  steps: number
+): { position: number; isHome: boolean; isFinished: boolean } {
   if (piece.isHome) {
     return { position: 0, isHome: false, isFinished: false };
   }
@@ -154,25 +174,36 @@ function calculateNewPosition(piece: PiecePosition, steps: number): { position: 
   return { position: newPosition, isHome: false, isFinished: false };
 }
 
-async function handleSpecialPositions(room: GameRoom, playerId: string, piece: PiecePosition, io: Server): Promise<void> {
+async function handleSpecialPositions(
+  room: GameRoom,
+  playerId: string,
+  piece: PiecePosition,
+  io: Server
+): Promise<void> {
   const safePositions = [0, 8, 13, 21, 26, 34, 39, 47];
   if (safePositions.includes(piece.position)) {
     return;
   }
 
-  for (const [otherPlayerId, pieces] of Object.entries(room.gameState.pieces) as [string, PiecePosition[]][]) {
+  for (const [otherPlayerId, pieces] of Object.entries(
+    room.gameState.pieces
+  ) as [string, PiecePosition[]][]) {
     if (otherPlayerId === playerId) continue;
 
     for (const otherPiece of pieces) {
-      if (!otherPiece.isHome && !otherPiece.isFinished && otherPiece.position === piece.position) {
+      if (
+        !otherPiece.isHome &&
+        !otherPiece.isFinished &&
+        otherPiece.position === piece.position
+      ) {
         otherPiece.position = -1;
         otherPiece.isHome = true;
 
-        io.to(room.roomId).emit('piece_captured', {
+        io.to(room.roomId).emit("piece_captured", {
           roomId: room.roomId,
           playerId: otherPlayerId,
           pieceId: otherPiece.id,
-          capturedBy: playerId
+          capturedBy: playerId,
         });
 
         break;
@@ -182,20 +213,24 @@ async function handleSpecialPositions(room: GameRoom, playerId: string, piece: P
 }
 
 function checkWinCondition(pieces: PiecePosition[]): boolean {
-  return pieces.every(piece => piece.isFinished);
+  return pieces.every((piece) => piece.isFinished);
 }
 
-async function handleWinCondition(room: GameRoom, winnerId: string, io: Server): Promise<void> {
+async function handleWinCondition(
+  room: GameRoom,
+  winnerId: string,
+  io: Server
+): Promise<void> {
   room.gameState.gamePhase = GamePhase.GameOver;
   room.gameState.diceValue = 0;
   (room.gameState as any).winner = winnerId;
 
   await redisClient.set(`room:${room.roomId}`, room);
 
-  io.to(room.roomId).emit('game_over', {
+  io.to(room.roomId).emit("game_over", {
     roomId: room.roomId,
     winnerId,
-    finalState: room.gameState
+    finalState: room.gameState,
   });
 
   await archiveGame(room);
