@@ -74,7 +74,7 @@ export const handleJoinRoom = async (
         return;
       }
     }
-
+    console.log("Above user find=================>")
     const user = await userService.getUser(userId);
     console.log("user ====================>", user);
     const player: Player = {
