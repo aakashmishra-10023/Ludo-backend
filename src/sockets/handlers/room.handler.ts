@@ -79,9 +79,9 @@ export const handleJoinRoom = async (
     console.log("user ====================>", user);
     const player: Player = {
       userId,
-      userName: user.userName ?? userName,
+      userName: user?.userName ?? userName,
       socketId: socket.id,
-      avatarUrl: user.profilePicture || undefined,
+      avatarUrl: user?.profilePicture || undefined,
       color: COLORS[room.players.length],
       isReady: true,
       position: room.players.length,
