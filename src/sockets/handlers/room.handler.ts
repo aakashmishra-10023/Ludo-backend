@@ -30,9 +30,6 @@ export const handleJoinRoom = async (
     const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
     console.log("join room handler ====================>", userId, userName, createNewRoom, roomId);
-    const str = Object.values(data).join("");
-    const parsedData = JSON.parse(str);
-    console.log("join room handler parsed data ====================>", parsedData);
     if (!userId || !userName) {
       socket.emit("error", { message: "User ID and userName are required" });
       return;
