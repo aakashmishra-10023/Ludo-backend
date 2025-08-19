@@ -54,7 +54,7 @@ export const handleJoinRoom = async (
         maxPlayers: MAX_PLAYERS,
       };
     } else {
-      const room: GameRoom = await redisClient.get(`room:${roomId}`);
+      room = await redisClient.get(`room:${roomId}`);
 
       if (!room) {
         socket.emit("error", { message: "Room does not exist" });
@@ -71,9 +71,7 @@ export const handleJoinRoom = async (
         return;
       }
     }
-    console.log("Above user find=================>")
     const user = await userService.getUser(userId);
-    console.log("user ====================>", user);
     const player: Player = {
       userId,
       userName: user?.userName ?? userName,
