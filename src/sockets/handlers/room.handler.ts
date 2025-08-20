@@ -76,7 +76,7 @@ export const handleJoinRoom = async (
       userId,
       userName: user?.userName ?? userName,
       socketId: socket.id,
-      avatarUrl: user?.profilePicture || undefined,
+      avatarUrl: user?.avatarUrl || undefined,
       color: COLORS[room.players.length],
       isReady: true,
       position: room.players.length,
