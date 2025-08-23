@@ -76,23 +76,13 @@ export async function assignPlayerToTournamentRoom(
 // }
 
 export async function proceedToNextRound(tournamentId: string, io: Server) {
-  const tournament = await redisClient.get(
-    `tournament:${tournamentId}`
-  );
-  
-  if (!tournament || tournament.status === "COMPLETED"){
-    try {
-      const schedulers = await tournamentQueue.getJobSchedulers();
-      const jobToRemove = schedulers.find(
-        (job) => job.id === `matchMonitioring-${tournamentId}`
-      );
+  const tournament = await redisClient.get(`tournament:${tournamentId}`);
 
-      if (jobToRemove) {
-        await tournamentQueue.removeJobScheduler(jobToRemove.id);
-        console.log(
-          `Stopped matchMonitioring job for tournament ${tournamentId}`
-        );
-      }
+  if (!tournament || tournament.status === "COMPLETED") {
+    try {
+      await tournamentQueue.removeJobScheduler(
+        `matchMonitioring-${tournamentId}`
+      );
     } catch (err) {
       console.warn(
         `Failed to remove matchMonitioring job for ${tournamentId}:`,
@@ -117,17 +107,10 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     console.log(`Tournament is Over and here is the winner ${winners[0]}`);
 
     try {
-      const schedulers = await tournamentQueue.getJobSchedulers();
-      const jobToRemove = schedulers.find(
-        (job) => job.id === `matchMonitioring-${tournamentId}`
+      await tournamentQueue.removeJobScheduler(
+        `matchMonitioring-${tournamentId}`
       );
-
-      if (jobToRemove) {
-        await tournamentQueue.removeJobScheduler(jobToRemove.id);
-        console.log(
-          `Stopped matchMonitioring job for tournament ${tournamentId}`
-        );
-      }
+      console.log("Job deleted from prceedToNextRound");
     } catch (err) {
       console.warn(
         `Failed to remove matchMonitioring job for ${tournamentId}:`,
@@ -156,10 +139,19 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     return;
   }
 
-  // Create rooms for next round
   const nextRoundRooms: GameRoom[] = [];
   for (let i = 0; i < winners.length; i += tournament.maxPlayersPerRoom) {
-    const group = winners.slice(i, i + tournament.maxPlayersPerRoom);
+    let group = winners.slice(i, i + tournament.maxPlayersPerRoom);
+
+    const remainingPlayers = winners.length - i;
+    if (remainingPlayers === 1 && nextRoundRooms.length > 0) {
+      const lastRoomPlayers = [...group]; 
+      const secondLastRoom = nextRoundRooms[nextRoundRooms.length - 1];
+      const playerToMove = secondLastRoom.players.pop();
+      if (playerToMove) lastRoomPlayers.unshift(playerToMove.userId);
+      group = lastRoomPlayers;
+    }
+
     const roomId = generateRoomId(6);
     const room: GameRoom = {
       roomId,
@@ -177,11 +169,20 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     };
     nextRoundRooms.push(room);
 
-    // Save each room in Redis
     await redisClient.set(`room:${roomId}`, JSON.stringify(room));
+
+    for (const uid of group) {
+      const socketId = await redisClient.get(`user:${uid}:socket`);
+      if (socketId) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.join(roomId);
+          socket.emit("room_assigned", { roomId, tournamentId });
+        }
+      }
+    }
   }
 
-  // Update tournament in Redis
   tournament.rooms = nextRoundRooms.map((room) => ({
     roomId: room.roomId,
     players: room.players.map((p) => ({
@@ -196,15 +197,16 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     maxPlayers: room.maxPlayers,
   }));
   tournament.currentRound++;
-  await redisClient.set(`tournament:${tournamentId}`, JSON.stringify(tournament));
+  await redisClient.set(
+    `tournament:${tournamentId}`,
+    JSON.stringify(tournament)
+  );
 
-  // Update tournament in DB
   await TournamentModel.updateOne(
     { tournamentId },
     { $set: { rooms: nextRoundRooms, currentRound: tournament.currentRound } }
   );
 
-  // Start games in all rooms
   for (const room of nextRoundRooms) {
     await startTournamentGame(io, tournamentId, room.roomId);
   }
@@ -223,7 +225,10 @@ export const closeJoiningAndStart = async (
 
   tournament.joiningOpen = false;
   tournament.status = "IN_PROGRESS";
-  await redisClient.set(`tournament:${tournamentId}`, JSON.stringify(tournament));
+  await redisClient.set(
+    `tournament:${tournamentId}`,
+    JSON.stringify(tournament)
+  );
   await TournamentModel.updateOne(
     { tournamentId },
     {
@@ -241,7 +246,10 @@ export const closeJoiningAndStart = async (
   tournament.rooms = nextRoundRooms;
   tournament.currentRound = 1;
 
-  await redisClient.set(`tournament:${tournamentId}`, JSON.stringify(tournament));
+  await redisClient.set(
+    `tournament:${tournamentId}`,
+    JSON.stringify(tournament)
+  );
   await TournamentModel.updateOne(
     { tournamentId },
     {
@@ -256,11 +264,11 @@ export const closeJoiningAndStart = async (
   await tournamentQueue.add(
     "matchMonitioring",
     { tournamentId },
-    { 
+    {
       repeat: {
-        every: 5000 
+        every: 5000,
       },
-      jobId: `matchMonitioring-${tournamentId}` 
+      jobId: `matchMonitioring-${tournamentId}`,
     }
   );
 
@@ -276,19 +284,17 @@ export async function createRoomsForRound(
   const rooms: GameRoom[] = [];
 
   for (let i = 0; i < players.length; i += maxPlayersPerRoom) {
-    const remaining = players.length - i;
+    let group = players.slice(i, i + maxPlayersPerRoom);
 
-    if (remaining === 1 && rooms.length > 0) {
-      rooms[rooms.length - 1].players.push({
-        userId: players[i],
-        userName: `Player_${players[i]}`,
-        socketId: (await redisClient.get(`user:${players[i]}:socket`)) || "",
-        isOnline: !!(await redisClient.get(`user:${players[i]}:socket`)),
-      });
-      continue;
+    const remainingPlayers = players.length - i;
+    if (remainingPlayers === 1 && rooms.length > 0) {
+      const lastRoomPlayers = [...group];
+      const secondLastRoom = rooms[rooms.length - 1];
+      const playerToMove = secondLastRoom.players.pop();
+      if (playerToMove) lastRoomPlayers.unshift(playerToMove.userId);
+      group = lastRoomPlayers;
     }
 
-    const group = players.slice(i, i + maxPlayersPerRoom);
     const roomId = generateRoomId(6);
     const roomPlayers = await Promise.all(
       group.map(async (uid) => {
