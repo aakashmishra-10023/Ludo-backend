@@ -94,7 +94,6 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
 
   const winners: string[] = [];
 
-  // Collect winners from all rooms of current round
   for (const room of tournament.rooms) {
     const roomData: GameRoom = await redisClient.get(`room:${room.roomId}`);
     if (roomData?.gameState?.winner) {
@@ -102,7 +101,6 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     }
   }
 
-  // If only one winner left, tournament is over
   if (winners.length <= 1) {
     console.log(`Tournament is Over and here is the winner ${winners[0]}`);
 
@@ -110,7 +108,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
       await tournamentQueue.removeJobScheduler(
         `matchMonitioring-${tournamentId}`
       );
-      console.log("Job deleted from prceedToNextRound");
+      console.log("Job deleted from proceedToNextRound");
     } catch (err) {
       console.warn(
         `Failed to remove matchMonitioring job for ${tournamentId}:`,
@@ -140,39 +138,48 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
   }
 
   const nextRoundRooms: GameRoom[] = [];
-  for (let i = 0; i < winners.length; i += tournament.maxPlayersPerRoom) {
-    let group = winners.slice(i, i + tournament.maxPlayersPerRoom);
+  const totalPlayers = winners.length;
+  const maxPlayers = tournament.maxPlayersPerRoom;
+  const numRooms = Math.ceil(totalPlayers / maxPlayers);
 
-    const remainingPlayers = winners.length - i;
-    if (remainingPlayers === 1 && nextRoundRooms.length > 0) {
-      const lastRoomPlayers = [...group]; 
-      const secondLastRoom = nextRoundRooms[nextRoundRooms.length - 1];
-      const playerToMove = secondLastRoom.players.pop();
-      if (playerToMove) lastRoomPlayers.unshift(playerToMove.userId);
-      group = lastRoomPlayers;
-    }
+  const playersPerRoom: number[] = Array(numRooms).fill(maxPlayers);
+  const extraPlayers = numRooms * maxPlayers - totalPlayers;
+
+  if (extraPlayers === maxPlayers - 1 && numRooms > 1) {
+    playersPerRoom[numRooms - 2] = maxPlayers - 1;
+    playersPerRoom[numRooms - 1] = maxPlayers - 2;
+  } else {
+    playersPerRoom[numRooms - 1] = maxPlayers - extraPlayers;
+  }
+
+  let index = 0;
+  for (let roomSize of playersPerRoom) {
+    const group = winners.slice(index, index + roomSize);
+    index += roomSize;
+
+    const roomPlayers = group.map((uid) => ({
+      userId: uid,
+      userName: `Player_${uid}`,
+      socketId: "",
+      isOnline: true,
+    }));
 
     const roomId = generateRoomId(6);
     const room: GameRoom = {
       roomId,
       tournamentId,
-      players: group.map((uid) => ({
-        userId: uid,
-        userName: `Player_${uid}`,
-        socketId: "",
-        isOnline: true,
-      })),
+      players: roomPlayers,
       gameStarted: false,
       gameState: null,
       createdAt: Date.now(),
-      maxPlayers: tournament.maxPlayersPerRoom,
+      maxPlayers,
     };
     nextRoundRooms.push(room);
 
     await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 
-    for (const uid of group) {
-      const socketId = await redisClient.get(`user:${uid}:socket`);
+    for (const player of roomPlayers) {
+      const socketId = await redisClient.get(`user:${player.userId}:socket`);
       if (socketId) {
         const socket = io.sockets.sockets.get(socketId);
         if (socket) {
@@ -196,6 +203,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     createdAt: new Date(room.createdAt),
     maxPlayers: room.maxPlayers,
   }));
+
   tournament.currentRound++;
   await redisClient.set(
     `tournament:${tournamentId}`,
@@ -215,6 +223,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     `[Tournament] Tournament ${tournamentId} Round ${tournament.currentRound} started`
   );
 }
+
 
 export const closeJoiningAndStart = async (
   tournamentId: string,
@@ -282,20 +291,25 @@ export async function createRoomsForRound(
   io: Server
 ): Promise<GameRoom[]> {
   const rooms: GameRoom[] = [];
+  const totalPlayers = players.length;
 
-  for (let i = 0; i < players.length; i += maxPlayersPerRoom) {
-    let group = players.slice(i, i + maxPlayersPerRoom);
+  let numRooms = Math.ceil(totalPlayers / maxPlayersPerRoom);
 
-    const remainingPlayers = players.length - i;
-    if (remainingPlayers === 1 && rooms.length > 0) {
-      const lastRoomPlayers = [...group];
-      const secondLastRoom = rooms[rooms.length - 1];
-      const playerToMove = secondLastRoom.players.pop();
-      if (playerToMove) lastRoomPlayers.unshift(playerToMove.userId);
-      group = lastRoomPlayers;
-    }
+  const playersPerRoom: number[] = Array(numRooms).fill(maxPlayersPerRoom);
+  const extraPlayers = numRooms * maxPlayersPerRoom - totalPlayers;
 
-    const roomId = generateRoomId(6);
+  if (extraPlayers === maxPlayersPerRoom - 1 && numRooms > 1) {
+    playersPerRoom[numRooms - 2] = maxPlayersPerRoom - 1;
+    playersPerRoom[numRooms - 1] = maxPlayersPerRoom - 2;
+  } else {
+    playersPerRoom[numRooms - 1] = maxPlayersPerRoom - extraPlayers;
+  }
+
+  let index = 0;
+  for (let roomSize of playersPerRoom) {
+    const group = players.slice(index, index + roomSize);
+    index += roomSize;
+
     const roomPlayers = await Promise.all(
       group.map(async (uid) => {
         const socketId = await redisClient.get(`user:${uid}:socket`);
@@ -307,9 +321,11 @@ export async function createRoomsForRound(
         };
       })
     );
+
+    const roomId = generateRoomId(6);
     const room: GameRoom = {
       roomId,
-      tournamentId: tournamentId,
+      tournamentId,
       players: roomPlayers,
       gameStarted: false,
       gameState: null,
@@ -318,7 +334,6 @@ export async function createRoomsForRound(
     };
 
     await redisClient.set(`room:${roomId}`, JSON.stringify(room));
-
     await TournamentModel.updateOne(
       { tournamentId },
       { $push: { rooms: room } }
@@ -326,10 +341,9 @@ export async function createRoomsForRound(
 
     rooms.push(room);
 
-    for (const player of group) {
-      const socketId = await redisClient.get(`user:${player}:socket`);
-      if (socketId) {
-        const socket = io.sockets.sockets.get(socketId);
+    for (const player of roomPlayers) {
+      if (player.socketId) {
+        const socket = io.sockets.sockets.get(player.socketId);
         if (socket) {
           socket.join(roomId);
           socket.emit("room_assigned", { roomId, tournamentId });
