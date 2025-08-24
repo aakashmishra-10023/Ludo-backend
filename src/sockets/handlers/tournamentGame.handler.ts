@@ -7,6 +7,7 @@ import { Tournament } from "../../interfaces/tournament.interface";
 import { TournamentModel } from "../../models/tournament";
 import { tournamentQueue } from "../../queues/tournament.queue";
 import { SocketService } from "..";
+import { TOURNAMENT_STATUSES } from "../../constants.ts/tournament.constants";
 
 export async function assignPlayerToTournamentRoom(
   tournamentId: string,
@@ -126,7 +127,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
         },
       }
     );
-    tournament.status = "COMPLETED";
+    tournament.status = TOURNAMENT_STATUSES.COMPLETED;
     tournament.winner = winners[0];
     tournament.endTime = new Date();
     await redisClient.set(
@@ -233,7 +234,7 @@ export const closeJoiningAndStart = async (
   if (!tournament || !tournament.joiningOpen) return;
 
   tournament.joiningOpen = false;
-  tournament.status = "IN_PROGRESS";
+  tournament.status = TOURNAMENT_STATUSES.IN_PROGRESS;
   await redisClient.set(
     `tournament:${tournamentId}`,
     JSON.stringify(tournament)
@@ -241,7 +242,7 @@ export const closeJoiningAndStart = async (
   await TournamentModel.updateOne(
     { tournamentId },
     {
-      $set: { joiningOpen: false, status: "IN_PROGRESS" },
+      $set: { joiningOpen: false, status: TOURNAMENT_STATUSES.IN_PROGRESS },
     }
   );
 
