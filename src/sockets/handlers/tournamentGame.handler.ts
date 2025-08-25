@@ -79,9 +79,13 @@ export async function assignPlayerToTournamentRoom(
 export async function proceedToNextRound(tournamentId: string, io: Server) {
   const tournament = await redisClient.get(`tournament:${tournamentId}`);
 
-  if (!tournament || tournament.status === "COMPLETED") {
+  if (!tournament || tournament.status === TOURNAMENT_STATUSES.COMPLETED) {
     try {
-      await tournamentQueue.removeJobScheduler(
+      await tournamentQueue.removeRepeatable(
+        "matchMonitioring",
+        {
+          every: 5000,
+        },
         `matchMonitioring-${tournamentId}`
       );
     } catch (err) {
@@ -104,18 +108,6 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
 
   if (winners.length <= 1) {
     console.log(`Tournament is Over and here is the winner ${winners[0]}`);
-
-    try {
-      await tournamentQueue.removeJobScheduler(
-        `matchMonitioring-${tournamentId}`
-      );
-      console.log("Job deleted from proceedToNextRound");
-    } catch (err) {
-      console.warn(
-        `Failed to remove matchMonitioring job for ${tournamentId}:`,
-        err.message
-      );
-    }
 
     await TournamentModel.updateOne(
       { tournamentId },
@@ -224,7 +216,6 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
     `[Tournament] Tournament ${tournamentId} Round ${tournament.currentRound} started`
   );
 }
-
 
 export const closeJoiningAndStart = async (
   tournamentId: string,
