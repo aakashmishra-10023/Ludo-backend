@@ -8,7 +8,7 @@ import {
 } from "../../interfaces/game.interface";
 import { GamePhase } from "../../enums/game.enum";
 import { Tournament } from "../../interfaces/tournament.interface";
-import { TournamentModel } from "../../models/tournament";
+import { TournamentModel } from "../../models/tournament.schema";
 
 export const handleTournamentRollDice = async (
   socket: Socket,

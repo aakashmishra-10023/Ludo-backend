@@ -4,7 +4,7 @@ import { startTournamentGame } from "./room.handler";
 import { Server } from "socket.io";
 import { generateRoomId } from "../../utils/common.utils";
 import { Tournament } from "../../interfaces/tournament.interface";
-import { TournamentModel } from "../../models/tournament";
+import { TournamentModel } from "../../models/tournament.schema";
 import { tournamentQueue } from "../../queues/tournament.queue";
 import { SocketService } from "..";
 import { TOURNAMENT_STATUSES } from "../../constants.ts/tournament.constants";

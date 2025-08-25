@@ -8,7 +8,7 @@ import {
 import { GameState, PiecePosition } from "../../interfaces/game.interface";
 import { GamePhase } from "../../enums/game.enum";
 import { userService } from "../../services/user.service";
-import { TournamentModel } from "../../models/tournament";
+import { TournamentModel } from "../../models/tournament.schema";
 
 const COLORS = ["red", "green", "yellow", "blue"];
 const MAX_PLAYERS = 4;

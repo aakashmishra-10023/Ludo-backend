@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { redisClient } from "../config/redis.config";
-import { TournamentModel } from "../models/tournament";
+import { TournamentModel } from "../models/tournament.schema";
 import { Tournament } from "../interfaces/tournament.interface";
 import { tournamentQueue } from "../queues/tournament.queue";
 

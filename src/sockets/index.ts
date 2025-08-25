@@ -12,7 +12,7 @@ import {
 import { socketAuth, requireAuth } from "../middlewares/socketAuth.middleware";
 import { GameRoom } from "../interfaces/room.interface";
 import { assignPlayerToTournamentRoom, closeJoiningAndStart } from "./handlers/tournamentGame.handler";
-import { TournamentModel } from "../models/tournament";
+import { TournamentModel } from "../models/tournament.schema";
 import { tournamentQueue } from "../queues/tournament.queue";
 import { Tournament } from "src/interfaces/tournament.interface";
 import { handleTournamentMovePiece, handleTournamentRollDice } from "./handlers/tournament.handler";
