@@ -8,9 +8,7 @@ import {
 import { GameState, PiecePosition } from "../../interfaces/game.interface";
 import { GamePhase } from "../../enums/game.enum";
 import { userService } from "../../services/user.service";
-
-const COLORS = ["red", "green", "yellow", "blue"];
-const MAX_PLAYERS = 4;
+import { COLORS, MAX_PLAYERS } from "../../constants/constants";
 
 const generateRoomId = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

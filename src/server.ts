@@ -1,6 +1,6 @@
 import express, { Express } from "express";
 import { createServer } from "http";
-import { appContext, authContext } from "./constants.ts/constants";
+import { appContext, authContext } from "./constants/constants";
 import { env } from "./config/env.config";
 import { mongoConnection } from "./databases/mongodb/mongodb.connection";
 import { authRouter } from "./routes/auth.route";
