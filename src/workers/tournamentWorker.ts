@@ -6,6 +6,11 @@ import {
 } from "../sockets/handlers/tournamentGame.handler";
 import { redisClient } from "../config/redis.config";
 import { tournamentQueue } from "../queues/tournament.queue";
+import { URL } from "url";
+import { env } from "../config/env.config";
+
+const redisUrl = env.REDIS_URL || "redis://127.0.0.1:6379";
+const parsed = new URL(redisUrl);
 
 export const worker = () =>
   new Worker(
@@ -89,8 +94,11 @@ export const worker = () =>
     },
     {
       connection: {
-        host: "127.0.0.1",
-        port: 6379,
+        host: parsed.hostname,
+        port: Number(parsed.port),
+        username: parsed.username || undefined,
+        password: parsed.password || undefined,
+        tls: parsed.protocol === "rediss:" ? {} : undefined,
       },
     }
   );

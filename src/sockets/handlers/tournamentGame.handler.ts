@@ -7,7 +7,7 @@ import { Tournament } from "../../interfaces/tournament.interface";
 import { TournamentModel } from "../../models/tournament.schema";
 import { tournamentQueue } from "../../queues/tournament.queue";
 import { SocketService } from "..";
-import { TOURNAMENT_STATUSES } from "../../constants.ts/tournament.constants";
+import { TOURNAMENT_STATUSES } from "../../constants/tournament.constants";
 
 export async function assignPlayerToTournamentRoom(
   tournamentId: string,
