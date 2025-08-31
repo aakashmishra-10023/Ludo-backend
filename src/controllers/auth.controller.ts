@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { SUCCESS_MESSAGE } from "../constants.ts/constants";
+import { SUCCESS_MESSAGE } from "../constants/constants";
 import { authService } from "../services/auth.service";
 
 class AuthController {
