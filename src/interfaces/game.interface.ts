@@ -25,4 +25,5 @@ export interface GameState {
     turnOrder: string[];   
     currentPlayerIndex: number; 
     gamePhase: GamePhase;
+    winner?: string;
 }
