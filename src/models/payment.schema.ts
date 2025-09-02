@@ -100,9 +100,6 @@ const PaymentSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    description: {
-      type: String,
-    },
     cardId: {
       type: String,
     },

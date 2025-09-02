@@ -50,12 +50,12 @@ export class SubscriptionService {
     contact?: string;
   }) {
     try {
-      const customer = await razorpay.customers.create({
+      const customer = (await razorpay.customers.create({
         name: userData.name || "User",
         email: userData.email,
         contact: userData.contact,
-        fail_existing: "0",
-      });
+        fail_existing: 0,
+      })) as any;
 
       logger.info(`Created Razorpay customer: ${customer.id}`);
       return customer;
@@ -80,45 +80,43 @@ export class SubscriptionService {
 
       const plan = SUBSCRIPTION_PLANS[planType];
 
-      // Create or get customer
-      let customerId = user.subscription?.razorpayCustomerId;
-      if (!customerId) {
-        const customer = await this.createCustomer({
-          email: user.email,
-          name: user.userName,
-        });
-        customerId = customer.id;
-
-        // Update user with customer ID
-        await UserModel.findByIdAndUpdate(userId, {
-          "subscription.razorpayCustomerId": customerId,
-        });
-      }
-
-      // Create subscription
-      const subscription = await razorpay.subscriptions.create({
-        plan_id: plan.id,
-        customer_id: customerId,
-        total_count: 12, // Maximum 12 billing cycles
-        quantity: 1,
-        customer_notify: 1,
-        notes: {
-          user_id: userId,
-          plan_type: planType,
-        },
-      });
+      // Create subscription registration link with customer association
+      const registrationLink =
+        (await razorpay.subscriptions.createRegistrationLink({
+          customer: {
+            name: user.userName || "User",
+            email: user.email,
+          },
+          type: "link",
+          amount: plan.amount,
+          currency: plan.currency,
+          description: `${plan.name} - ${user.userName || user.email}`,
+          subscription_registration: {
+            method: "card",
+            max_amount: plan.amount,
+            expire_at: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days from now
+          },
+          receipt: `receipt_${userId}_${Date.now()}`,
+          email_notify: true,
+          sms_notify: true,
+          expire_by: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days from now
+          notes: {
+            user_id: userId,
+            plan_type: planType,
+          },
+        })) as any;
 
       // Save subscription to database
       const subscriptionDoc = new SubscriptionModel({
         userId,
         plan: planType.toLowerCase() as SubscriptionPlan,
         status: SubscriptionStatus.INACTIVE,
-        razorpaySubscriptionId: subscription.id,
+        razorpaySubscriptionId: registrationLink.id, // This will be the invoice ID initially
         razorpayPlanId: plan.id,
-        currentStart: new Date(subscription.current_start * 1000),
-        currentEnd: new Date(subscription.current_end * 1000),
-        quantity: subscription.quantity,
-        shortUrl: subscription.short_url,
+        currentStart: new Date(),
+        currentEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        quantity: 1,
+        shortUrl: registrationLink.short_url,
         customerDetails: {
           email: user.email,
           name: user.userName,
@@ -127,13 +125,13 @@ export class SubscriptionService {
 
       await subscriptionDoc.save();
 
-      logger.info(`Created subscription for user ${userId}`, {
-        subscriptionId: subscription.id,
+      logger.info(`Created subscription registration link for user ${userId}`, {
+        registrationLinkId: registrationLink.id,
         plan: planType,
       });
 
       return {
-        subscription,
+        subscription: registrationLink,
         subscriptionDoc,
       };
     } catch (error) {
@@ -163,9 +161,10 @@ export class SubscriptionService {
     cancelAtCycleEnd: boolean = false
   ) {
     try {
-      const subscription = await razorpay.subscriptions.cancel(subscriptionId, {
-        cancel_at_cycle_end: cancelAtCycleEnd ? 1 : 0,
-      });
+      const subscription = await razorpay.subscriptions.cancel(
+        subscriptionId,
+        cancelAtCycleEnd
+      );
 
       // Update database
       await SubscriptionModel.findOneAndUpdate(
@@ -195,8 +194,8 @@ export class SubscriptionService {
   ) {
     try {
       const subscription = await razorpay.subscriptions.pause(subscriptionId, {
-        pause_at: pauseAt,
-      });
+        pause_at: pauseAt === "cycle" ? "now" : pauseAt,
+      } as any);
 
       // Update database
       await SubscriptionModel.findOneAndUpdate(
