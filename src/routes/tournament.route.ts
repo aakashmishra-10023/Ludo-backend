@@ -65,25 +65,7 @@ class TournamentRouter {
         }
       }
     );
-
-    this.router.get(
-      "/list-tournaments",
-      async (req: Request, res: Response) => {
-        try {
-          const tournaments = await TournamentModel.find().sort({ createdAt: -1 });
-
-          res.status(200).json({
-            message: "Tournaments fetched successfully",
-            total: tournaments.length,
-            tournaments,
-          });
-        } catch (error) {
-          console.error("Error fetching tournaments:", error);
-          res.status(500).json({ message: "Internal server error" });
-        }
-      }
-    );
-
+    
     return this.router;
   }
 }
