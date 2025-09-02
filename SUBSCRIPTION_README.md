@@ -5,10 +5,12 @@ This document describes the Razorpay subscription implementation for the Ludo Ba
 ## Features
 
 - **Subscription Plans**: Weekly, Monthly, Quarterly, and Annual plans
-- **Payment Gateway**: Integrated with Razorpay
+- **Payment Gateway**: Integrated with Razorpay using registration links
+- **Customer Association**: Automatic customer creation and association with subscriptions
 - **Webhook Handling**: Automatic subscription status updates
 - **User Management**: Subscription status tracking per user
 - **API Endpoints**: Complete CRUD operations for subscriptions
+- **Registration Links**: Secure payment authorization flow
 
 ## Environment Variables
 
@@ -73,6 +75,8 @@ Content-Type: application/json
   "planType": "MONTHLY"
 }
 ```
+
+**Response:** Returns a registration link that customers use to authorize payments and activate their subscription.
 
 #### Get User Subscription
 
@@ -162,7 +166,7 @@ Tracks payment transactions:
 
 ## Webhook Events Handled
 
-- `subscription.activated` - Subscription becomes active
+- `subscription.activated` - Subscription becomes active after customer authorization
 - `subscription.charged` - Successful payment for subscription
 - `subscription.completed` - Subscription reaches end of billing cycles
 - `subscription.cancelled` - Subscription is cancelled
@@ -171,6 +175,7 @@ Tracks payment transactions:
 - `subscription.halted` - Subscription is halted due to payment failure
 - `payment.captured` - Payment is successfully captured
 - `payment.failed` - Payment fails
+- `invoice.paid` - Registration link payment completed (triggers subscription activation)
 
 ## Usage Examples
 
@@ -221,11 +226,20 @@ router.get("/feature", optionalSubscription, (req, res) => {
    - Go to Razorpay Dashboard
    - Navigate to Settings > Webhooks
    - Add webhook URL: `https://yourdomain.com/webhook/razorpay`
-   - Select events: All subscription and payment events
+   - Select events: All subscription, payment, and invoice events
    - Copy the webhook secret to your environment variables
 
 4. **Create Razorpay Plans**
    The system will automatically create plans when needed, or you can create them manually in the Razorpay dashboard.
+
+## Subscription Flow
+
+1. **User selects a plan** and calls `/subscription/create`
+2. **System creates a registration link** with customer details embedded
+3. **Customer visits the registration link** to authorize payments
+4. **Razorpay processes the authorization** and sends webhook events
+5. **System automatically activates subscription** when authorization is complete
+6. **Recurring payments begin** according to the selected plan
 
 ## Security Considerations
 
@@ -247,8 +261,15 @@ The system includes comprehensive error handling:
 
 Use the provided API endpoints to test the subscription flow:
 
-1. Get available plans
-2. Create a subscription
-3. Verify payment (webhook will handle this automatically)
-4. Check subscription status
-5. Test cancellation, pause, and resume functionality
+1. **Get available plans** - Call `/subscription/plans`
+2. **Create a subscription** - Call `/subscription/create` to get registration link
+3. **Authorize payment** - Visit the registration link to complete authorization
+4. **Check subscription status** - Call `/subscription/my-subscription` to verify activation
+5. **Test management features** - Test cancellation, pause, and resume functionality
+
+### Testing with Razorpay Test Mode
+
+1. Use Razorpay test API keys in your environment
+2. Create test customers and subscriptions
+3. Use test card numbers for payment authorization
+4. Monitor webhook events in Razorpay dashboard

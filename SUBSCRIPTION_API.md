@@ -76,7 +76,7 @@ Get all available subscription plans.
 
 **POST** `/subscription/create`
 
-Create a new subscription for the authenticated user.
+Create a new subscription registration link for the authenticated user. This creates a registration link that the customer can use to authorize payments and activate their subscription.
 
 **Headers:**
 
@@ -107,16 +107,25 @@ Content-Type: application/json
   "success": true,
   "data": {
     "subscription": {
-      "id": "sub_ABC123",
-      "plan_id": "plan_monthly",
-      "status": "created",
+      "id": "inv_ABC123",
+      "entity": "invoice",
+      "customer_id": "cust_ABC123",
+      "status": "issued",
+      "amount": 29900,
+      "currency": "INR",
+      "description": "Monthly Premium - John Doe",
       "short_url": "https://rzp.io/i/ABC123",
-      "current_start": 1640995200,
-      "current_end": 1643673600
+      "expire_by": 1640995200,
+      "created_at": 1640908800,
+      "token": {
+        "method": "card",
+        "max_amount": 29900,
+        "expire_at": 1640995200
+      }
     },
     "shortUrl": "https://rzp.io/i/ABC123"
   },
-  "message": "Subscription created successfully"
+  "message": "Subscription registration link created successfully"
 }
 ```
 
@@ -128,6 +137,8 @@ Content-Type: application/json
   "message": "User already has an active subscription"
 }
 ```
+
+**Note:** The customer needs to visit the `shortUrl` to complete payment authorization. Once authorized, the subscription will be activated automatically via webhook.
 
 ### 3. Get User Subscription
 
@@ -349,7 +360,7 @@ Content-Type: application/json
 // Get available plans
 const plans = await fetch("/subscription/plans").then((r) => r.json());
 
-// Create subscription
+// Create subscription registration link
 const subscription = await fetch("/subscription/create", {
   method: "POST",
   headers: {
@@ -359,10 +370,10 @@ const subscription = await fetch("/subscription/create", {
   body: JSON.stringify({ planType: "MONTHLY" }),
 }).then((r) => r.json());
 
-// Redirect to Razorpay payment page
+// Redirect to Razorpay registration page for payment authorization
 window.location.href = subscription.data.shortUrl;
 
-// After payment, verify payment
+// After payment authorization, verify payment (optional - webhook handles this automatically)
 const verification = await fetch("/subscription/verify-payment", {
   method: "POST",
   headers: {
@@ -374,4 +385,18 @@ const verification = await fetch("/subscription/verify-payment", {
     razorpay_signature: signature,
   }),
 }).then((r) => r.json());
+
+// Check subscription status
+const userSubscription = await fetch("/subscription/my-subscription", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+}).then((r) => r.json());
 ```
+
+### Subscription Flow
+
+1. **Create Registration Link**: Call `/subscription/create` to get a registration link
+2. **Customer Authorization**: Customer visits the `shortUrl` to authorize payments
+3. **Automatic Activation**: Webhook automatically activates subscription after successful authorization
+4. **Status Check**: Use `/subscription/my-subscription` to check subscription status
