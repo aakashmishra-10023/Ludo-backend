@@ -9,6 +9,20 @@ const UserSchema = new Schema(
     avatarUrl: { type: String },
     socialType: { type: String },
     socialId: { type: String },
+    subscription: {
+      isActive: { type: Boolean, default: false },
+      plan: {
+        type: String,
+        enum: ["weekly", "monthly", "quarterly", "annual"],
+      },
+      startDate: { type: Date },
+      endDate: { type: Date },
+      razorpayCustomerId: { type: String },
+    },
+    preferences: {
+      notifications: { type: Boolean, default: true },
+      autoRenew: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );
@@ -17,4 +31,6 @@ export type User = InferSchemaType<typeof UserSchema>;
 
 export type UserDocument = HydratedDocument<User>;
 
-export const UserModel = mongoConnection.getConnection().model<User>("User", UserSchema);
+export const UserModel = mongoConnection
+  .getConnection()
+  .model<User>("User", UserSchema);
