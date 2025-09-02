@@ -2,7 +2,7 @@ export interface Tournament {
     tournamentId: string;
     name: string;
     createdBy: string;
-    status: 'JOINING' | 'IN_PROGRESS' | 'COMPLETED';
+    status: string;
     joiningOpen: boolean;
     maxPlayersPerRoom: number;
     currentRound: number;

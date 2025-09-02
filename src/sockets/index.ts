@@ -121,15 +121,22 @@ export class SocketService {
         
           // Store room mapping
           await redisClient.set(`tournament:${tournamentId}:player:${userId}:room`, roomId);
-          socket.join(roomId);
+          socket.join(`tournament:${tournamentId}`);
+
+          // Notify others in the tournament
+          socket.to(`tournament:${tournamentId}`).emit("player_joined", {
+            userId,
+            players: tournament.players,
+          });
         
           // Fetch room from Redis
           const room: GameRoom = await redisClient.get(`room:${roomId}`);
-          io.to(roomId).emit("room_joined", {
+          socket.emit("tournament_joined", {
+            tournamentId,
             roomId,
             players: room.players,
             maxPlayers: room.players.length,
-          });
+          });          
         
           console.log(`[Tournament] Player ${userId} joined tournament ${tournamentId} in room ${roomId}`);
         
@@ -155,7 +162,6 @@ export class SocketService {
           );
         
           // Check if tournament reached player limit
-          console.log(tournament.playerLimit, tournament.players.length, "TOTAL");
           if (tournament.players.length >= tournament.playerLimit) {
             await closeJoiningAndStart(tournamentId, io);
             await tournamentQueue.removeRepeatable('closeJoiningAndStart', { jobId: tournamentId });

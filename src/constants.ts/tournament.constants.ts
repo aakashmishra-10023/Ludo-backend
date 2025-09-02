@@ -4,3 +4,14 @@ export const TOURNAMENT_STATUSES = {
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",   
 };
+
+export const MAX_PLAYERS_PER_ROOM = 4;
+export const MAX_PLAYERS_PER_TOURNAMENT = 100;
+
+export const TOURNAMENT_CREATION = {
+    SYSTEM: "system",
+}
+
+export const TOURNAMENT = {
+    SCHEDULE_TIME: "0 * * * *"
+}

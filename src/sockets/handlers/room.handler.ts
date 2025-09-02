@@ -9,6 +9,7 @@ import { GameState, PiecePosition } from "../../interfaces/game.interface";
 import { GamePhase } from "../../enums/game.enum";
 import { userService } from "../../services/user.service";
 import { TournamentModel } from "../../models/tournament.schema";
+import { tournamentQueue } from "../../queues/tournament.queue";
 
 const COLORS = ["red", "green", "yellow", "blue"];
 const MAX_PLAYERS = 4;
@@ -30,7 +31,13 @@ export const handleJoinRoom = async (
   try {
     const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
-    console.log("join room handler ====================>", userId, userName, createNewRoom, roomId);
+    console.log(
+      "join room handler ====================>",
+      userId,
+      userName,
+      createNewRoom,
+      roomId
+    );
     if (!userId || !userName) {
       socket.emit("error", { message: "User ID and userName are required" });
       return;
@@ -172,7 +179,11 @@ export const startGame = async (io: Server, roomId: string): Promise<void> => {
   }
 };
 
-export const startTournamentGame = async (io: Server, tournamentId: string, roomId: string): Promise<void> => {
+export const startTournamentGame = async (
+  io: Server,
+  tournamentId: string,
+  roomId: string
+): Promise<void> => {
   try {
     const room: GameRoom = await redisClient.get(`room:${roomId}`);
 
@@ -187,6 +198,20 @@ export const startTournamentGame = async (io: Server, tournamentId: string, room
       console.warn(
         `Tournament ${tournamentId}: Cannot start game in room ${roomId} — only ${room.players.length} player(s).`
       );
+
+      try {
+        const removed = await tournamentQueue.removeRepeatable(
+          "matchMonitioring",
+          { every: 5000 },
+          `matchMonitioring-${tournamentId}`
+        );
+        
+      } catch (err) {
+        console.warn(
+          `Failed to remove matchMonitioring job for ${tournamentId}:`,
+          err.message
+        );
+      }
 
       io.to(roomId).emit("game_not_started", {
         roomId,
@@ -241,7 +266,9 @@ export const startTournamentGame = async (io: Server, tournamentId: string, room
       message: "Tournament game started!",
     });
 
-    console.log(`Tournament ${tournamentId}: Game started in room ${roomId} with ${room.players.length} players`);
+    console.log(
+      `Tournament ${tournamentId}: Game started in room ${roomId} with ${room.players.length} players`
+    );
   } catch (error) {
     console.error(`Error starting tournament game in room ${roomId}:`, error);
     io.to(roomId).emit("error", { message: "Error starting tournament game" });
