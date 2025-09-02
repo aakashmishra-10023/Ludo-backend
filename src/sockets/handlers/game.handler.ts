@@ -14,6 +14,7 @@ export const handleRollDice = async (
   data: RollDiceData
 ): Promise<void> => {
   try {
+    console.log("Inside roll dice handler==================", data);
     const { roomId, userId } = data;
 
     if (!roomId || !userId) {
