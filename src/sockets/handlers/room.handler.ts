@@ -8,9 +8,8 @@ import {
 import { GameState, PiecePosition } from "../../interfaces/game.interface";
 import { GamePhase } from "../../enums/game.enum";
 import { userService } from "../../services/user.service";
-
-const COLORS = ["red", "green", "yellow", "blue"];
-const MAX_PLAYERS = 4;
+import { COLORS, MAX_PLAYERS } from "../../constants/constants";
+import { TournamentModel } from "../../models/tournament.schema";
 
 const generateRoomId = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -29,7 +28,7 @@ export const handleJoinRoom = async (
   try {
     const { userId, userName, createNewRoom } = data;
     let { roomId } = data;
-
+    console.log("join room handler ====================>", userId, userName, createNewRoom, roomId);
     if (!userId || !userName) {
       socket.emit("error", { message: "User ID and userName are required" });
       return;
@@ -54,7 +53,7 @@ export const handleJoinRoom = async (
         maxPlayers: MAX_PLAYERS,
       };
     } else {
-      const room: GameRoom = await redisClient.get(`room:${roomId}`);
+      room = await redisClient.get(`room:${roomId}`);
 
       if (!room) {
         socket.emit("error", { message: "Room does not exist" });
@@ -71,14 +70,12 @@ export const handleJoinRoom = async (
         return;
       }
     }
-
     const user = await userService.getUser(userId);
-
     const player: Player = {
       userId,
-      userName: user.userName ?? userName,
+      userName: user?.userName ?? userName,
       socketId: socket.id,
-      avatarUrl: user.profilePicture || undefined,
+      avatarUrl: user?.avatarUrl || undefined,
       color: COLORS[room.players.length],
       isReady: true,
       position: room.players.length,
@@ -170,5 +167,81 @@ export const startGame = async (io: Server, roomId: string): Promise<void> => {
   } catch (error) {
     console.error("Error starting game:", error);
     io.to(roomId).emit("error", { message: "Error starting game" });
+  }
+};
+
+export const startTournamentGame = async (io: Server, tournamentId: string, roomId: string): Promise<void> => {
+  try {
+    const room: GameRoom = await redisClient.get(`room:${roomId}`);
+
+    if (!room) {
+      console.error(`Room ${roomId} not found for tournament ${tournamentId}`);
+      return;
+    }
+
+    if (room.gameStarted) return;
+
+    if (!room.players || room.players.length < 2) {
+      console.warn(
+        `Tournament ${tournamentId}: Cannot start game in room ${roomId} — only ${room.players.length} player(s).`
+      );
+
+      io.to(roomId).emit("game_not_started", {
+        roomId,
+        message:
+          room.players.length === 0
+            ? "Game cannot start — no players in the room."
+            : "Waiting for more players to join before starting the game.",
+      });
+
+      return;
+    }
+
+    const turnOrder = room.players.map((player: Player) => player.userId);
+    const pieces: Record<string, PiecePosition[]> = {};
+
+    turnOrder.forEach((userId: string) => {
+      pieces[userId] = [
+        { id: 0, position: -1, isHome: true, isFinished: false },
+        { id: 1, position: -1, isHome: true, isFinished: false },
+        { id: 2, position: -1, isHome: true, isFinished: false },
+        { id: 3, position: -1, isHome: true, isFinished: false },
+      ];
+    });
+
+    const gameState: GameState = {
+      currentTurn: turnOrder[0],
+      diceValue: 0,
+      pieces,
+      turnOrder,
+      currentPlayerIndex: 0,
+      gamePhase: GamePhase.Rolling,
+    };
+
+    // Update room state
+    room.gameStarted = true;
+    room.gameState = gameState;
+
+    // Save updated room in Redis
+    await redisClient.set(`room:${roomId}`, JSON.stringify(room));
+
+    // Update tournament document in MongoDB
+    await TournamentModel.updateOne(
+      { tournamentId, "rooms.roomId": roomId },
+      { $set: { "rooms.$": room } }
+    );
+
+    // Emit to players in the room
+    io.to(roomId).emit("start_game", {
+      roomId,
+      gameState,
+      players: room.players,
+      message: "Tournament game started!",
+    });
+
+    console.log(`Tournament ${tournamentId}: Game started in room ${roomId} with ${room.players.length} players`);
+  } catch (error) {
+    console.error(`Error starting tournament game in room ${roomId}:`, error);
+    io.to(roomId).emit("error", { message: "Error starting tournament game" });
   }
 };

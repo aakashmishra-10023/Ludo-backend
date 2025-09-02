@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { UserDocument, UserModel } from "../models/user.schema";
 
 class UserService {
@@ -5,9 +6,9 @@ class UserService {
     constructor(
     ) { }
 
-    async getUser(userId: string): Promise<UserDocument> {
+    async getUser(userId: string) {
         try {
-            const user = await UserModel.findOne({ _id: userId });
+            const user = await UserModel.findOne({ _id: new Types.ObjectId(userId) }).lean();
             return user;
         } catch (error) {
             throw error;

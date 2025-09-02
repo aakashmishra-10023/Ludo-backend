@@ -26,4 +26,5 @@ export interface GameRoom {
     createdAt: number;
     maxPlayers: number;
     gameState?: GameState;
+    tournamentId?: string; 
 }

@@ -8,11 +8,13 @@
   "scripts": {
     "build": "tsc -p .",
     "start": "node dist/server.js",
-    "dev": "nodemon --exec ts-node ./src/server.ts"
+    "dev": "nodemon --exec ts-node ./src/server.ts",
+    "worker": "ts-node src/workers/tournamentWorker.ts"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
     "bcryptjs": "^3.0.2",
+    "bullmq": "^5.58.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
@@ -26,6 +28,7 @@
     "redis": "^5.8.0",
     "socket.io": "^4.8.1",
     "socket.io-redis": "^5.4.0",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "zod": "^3.25.76"
   },

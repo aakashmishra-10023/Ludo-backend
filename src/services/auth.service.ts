@@ -7,7 +7,7 @@ class AuthService {
     constructor(
     ) { }
 
-    async socialSignIn(name: string, email: string, socialType: string, socialId: string): Promise<{ authToken: string, refreshToken: string }> {
+    async socialSignIn(name: string, email: string, socialType: string, socialId: string, avatarUrl: string): Promise<{ authToken: string, refreshToken: string }> {
         try {
 
             const user = await UserModel.findOne({ socialType, socialId });
@@ -15,7 +15,7 @@ class AuthService {
                 const session = sessionService.create(user._id.toString(), UserType.Customer);
                 return session;
             } else {
-                const newUser = await UserModel.create({ userName: name, email, socialType, socialId });
+                const newUser = await UserModel.create({ userName: name, email, socialType, socialId, avatarUrl });
                 const session = sessionService.create(newUser._id.toString(), UserType.Customer);
                 return session;
             }
