@@ -24,6 +24,7 @@ export interface GameRoom {
     players: Player[];
     gameStarted: boolean;
     createdAt: number;
+    createdBy: string,
     maxPlayers: number;
     gameState?: GameState;
     tournamentId?: string; 
