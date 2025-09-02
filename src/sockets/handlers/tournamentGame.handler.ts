@@ -36,6 +36,7 @@ export async function assignPlayerToTournamentRoom(
       gameStarted: false,
       gameState: null,
       createdAt: Date.now(),
+      createdBy: "system",
       maxPlayers: 4,
     };
 
@@ -165,6 +166,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
       gameStarted: false,
       gameState: null,
       createdAt: Date.now(),
+      createdBy: "system",
       maxPlayers,
     };
     nextRoundRooms.push(room);
@@ -322,6 +324,7 @@ export async function createRoomsForRound(
       gameStarted: false,
       gameState: null,
       createdAt: Date.now(),
+      createdBy: "system",
       maxPlayers: maxPlayersPerRoom,
     };
 

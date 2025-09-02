@@ -4,7 +4,7 @@ import { redisClient } from "../config/redis.config";
 import { TournamentModel } from "../models/tournament.schema";
 import { Tournament } from "../interfaces/tournament.interface";
 import { tournamentQueue } from "../queues/tournament.queue";
-import { TOURNAMENT_STATUSES } from "src/constants/tournament.constants";
+import { TOURNAMENT_STATUSES } from "../constants/tournament.constants";
 
 class TournamentRouter {
   private router!: Router;
