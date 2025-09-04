@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { redisClient } from "../config/redis.config";
 import { TournamentModel } from "../models/tournament.schema";
 import { tournamentQueue } from "../queues/tournament.queue";
-import { MAX_PLAYERS_PER_ROOM, MAX_PLAYERS_PER_TOURNAMENT, TOURNAMENT, TOURNAMENT_CREATION, TOURNAMENT_STATUSES } from "../constants.ts/tournament.constants";
+import { MAX_PLAYERS_PER_ROOM, MAX_PLAYERS_PER_TOURNAMENT, TOURNAMENT, TOURNAMENT_CREATION, TOURNAMENT_STATUSES } from "../constants/tournament.constants";
 import { Tournament } from "../interfaces/tournament.interface";
 
 export const startTournamentScheduler = () => {

@@ -36,7 +36,7 @@ class TournamentRouter {
             players: [],
             rooms: [],
             maxPlayersPerRoom,
-            status: TOURNAMENT_STATUSES.JOINING as "JOINING" | "IN_PROGRESS" | "COMPLETED",
+            status: TOURNAMENT_STATUSES.JOINING,
             currentRound: 0,
           };
 
@@ -48,7 +48,7 @@ class TournamentRouter {
             "closeJoiningAndStart",
             { tournamentId },
             {
-              delay: 2 * 60 * 1000,
+              delay: 60 * 60 * 1000,
               jobId: tournamentId, 
               // removeOnComplete: true, 
               // removeOnFail: true, 
