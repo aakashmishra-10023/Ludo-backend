@@ -16,6 +16,7 @@ import { TournamentModel } from "../models/tournament.schema";
 import { tournamentQueue } from "../queues/tournament.queue";
 import { Tournament } from "src/interfaces/tournament.interface";
 import { handleTournamentMovePiece, handleTournamentRollDice } from "./handlers/tournament.handler";
+import { handleStartGame } from "./handlers/room.handler";
 
 export class SocketService {
   private static io: Server;
@@ -64,6 +65,13 @@ export class SocketService {
             ...data,
             userId: socket.data.user.id,
             userName: `Player_${socket.id.substring(0, 5)}`,
+          });
+        });
+
+        socket.on("start_game", (data) => {
+          handleStartGame(socket, SocketService.io, {
+            ...data,
+            userId: socket.data.user.id,
           });
         });
 
