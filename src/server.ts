@@ -8,6 +8,7 @@ import { SocketService } from "./sockets";
 import { appRouter } from "./routes/app.route";
 import { tournamentRouter } from "./routes/tournament.route";
 import { worker } from "./workers/tournamentWorker";
+import { startTournamentScheduler } from "./schedulers/tournament.scheduler";
 
 class App{
     private app!: Express;            
@@ -50,6 +51,7 @@ class App{
         const httpServer = createServer(this.app);        
         new SocketService(httpServer);
         worker();
+        startTournamentScheduler();
         httpServer.listen(this.port, () => {
             console.log(`Server is running on port: ${this.port}`);
             console.log(`Socket.IO server initialized`);

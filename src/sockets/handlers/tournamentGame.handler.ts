@@ -82,7 +82,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
 
   if (!tournament || tournament.status === TOURNAMENT_STATUSES.COMPLETED) {
     try {
-      await tournamentQueue.removeRepeatable(
+      const Removed = await tournamentQueue.removeRepeatable(
         "matchMonitioring",
         {
           every: 5000,
@@ -114,7 +114,7 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
       { tournamentId },
       {
         $set: {
-          status: "completed",
+          status: TOURNAMENT_STATUSES.COMPLETED,
           winner: winners[0],
           endTime: new Date(),
         },
@@ -127,7 +127,10 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
       `tournament:${tournamentId}`,
       JSON.stringify(tournament)
     );
-    io.emit("tournament_over", { winner: winners[0] });
+    io.to(`tournament:${tournamentId}`).emit("tournament_over", {
+      tournamentId,
+      winner: winners[0],
+    });
     return;
   }
 
@@ -173,13 +176,30 @@ export async function proceedToNextRound(tournamentId: string, io: Server) {
 
     await redisClient.set(`room:${roomId}`, JSON.stringify(room));
 
+    io.to(`tournament:${tournamentId}`).emit("next_round", {
+      tournamentId,
+      rooms: nextRoundRooms,
+      currentRound: tournament.currentRound,
+    });    
+
     for (const player of roomPlayers) {
       const socketId = await redisClient.get(`user:${player.userId}:socket`);
       if (socketId) {
         const socket = io.sockets.sockets.get(socketId);
         if (socket) {
+          for (const r of socket.rooms) {
+            if (r !== socket.id) {
+              socket.leave(r);
+            }
+          }
           socket.join(roomId);
-          socket.emit("room_assigned", { roomId, tournamentId });
+          socket.join(`tournament:${tournamentId}`);
+          socket.emit("room_assigned", {
+            tournamentId,
+            roomId,
+            players: room.players,
+            maxPlayers: room.maxPlayers,
+          });
         }
       }
     }
@@ -226,6 +246,36 @@ export const closeJoiningAndStart = async (
   let tournament = await redisClient.get(`tournament:${tournamentId}`);
   if (!tournament || !tournament.joiningOpen) return;
 
+  if (!tournament.players || tournament.players.length < 2) {
+    tournament.joiningOpen = false;
+    tournament.status = TOURNAMENT_STATUSES.COMPLETED; 
+
+    await redisClient.set(
+      `tournament:${tournamentId}`,
+      JSON.stringify(tournament)
+    );
+
+    await TournamentModel.updateOne(
+      { tournamentId },
+      {
+        $set: {
+          joiningOpen: false,
+          status: TOURNAMENT_STATUSES.COMPLETED,
+        },
+      }
+    );
+
+    io.to(`tournament:${tournamentId}`).emit("tournament_cancelled", {
+      tournamentId,
+      reason: "Not enough players joined",
+    });
+
+    console.log(
+      `[Tournament] Tournament ${tournamentId} cancelled due to insufficient players`
+    );
+    return;
+  }
+
   tournament.joiningOpen = false;
   tournament.status = TOURNAMENT_STATUSES.IN_PROGRESS;
   await redisClient.set(
@@ -245,6 +295,12 @@ export const closeJoiningAndStart = async (
     tournament.maxPlayersPerRoom,
     io
   );
+
+  io.to(`tournament:${tournamentId}`).emit("tournament_started", {
+    tournamentId,
+    rooms: nextRoundRooms,
+    currentRound: 1,
+  });  
 
   tournament.rooms = nextRoundRooms;
   tournament.currentRound = 1;
@@ -341,7 +397,14 @@ export async function createRoomsForRound(
         const socket = io.sockets.sockets.get(player.socketId);
         if (socket) {
           socket.join(roomId);
-          socket.emit("room_assigned", { roomId, tournamentId });
+          socket.join(`tournament:${tournamentId}`);
+          socket.emit("room_assigned", {
+            tournamentId,
+            roomId,
+            players: room.players,
+            maxPlayers: room.maxPlayers,
+          });
+          
         }
       }
     }
