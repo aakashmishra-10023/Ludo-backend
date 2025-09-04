@@ -37,7 +37,7 @@ export const startTournamentScheduler = () => {
         "closeJoiningAndStart",
         { tournamentId },
         {
-          delay: 2 * 60 * 1000,
+          delay: 5 * 60 * 1000,
           jobId: tournamentId,
         }
       );
