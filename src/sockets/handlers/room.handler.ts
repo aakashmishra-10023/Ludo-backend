@@ -155,7 +155,7 @@ export const startGame = async (io: Server, roomId: string): Promise<void> => {
 
     await redisClient.set(`room:${roomId}`, room);
 
-    io.to(roomId).emit("start_game", {
+    io.to(roomId).emit("game_started", {
       roomId,
       gameState,
       players: room.players,
@@ -233,7 +233,7 @@ export const startTournamentGame = async (io: Server, tournamentId: string, room
     );
 
     // Emit to players in the room
-    io.to(roomId).emit("start_game", {
+    io.to(roomId).emit("game_started", {
       roomId,
       gameState,
       players: room.players,
@@ -302,7 +302,7 @@ export const handleStartGame = async (
 
     await redisClient.set(`room:${roomId}`, room);
 
-    io.to(roomId).emit("start_game", {
+    io.to(roomId).emit("game_started", {
       roomId,
       gameState,
       players: room.players,
