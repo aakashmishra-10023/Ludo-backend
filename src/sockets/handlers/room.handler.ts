@@ -50,6 +50,7 @@ export const handleJoinRoom = async (
         players: [],
         gameStarted: false,
         createdAt: Date.now(),
+        createdBy: userId,
         maxPlayers: MAX_PLAYERS,
       };
     } else {
@@ -245,3 +246,73 @@ export const startTournamentGame = async (io: Server, tournamentId: string, room
     io.to(roomId).emit("error", { message: "Error starting tournament game" });
   }
 };
+
+export const handleStartGame = async (
+  socket: Socket,
+  io: Server,
+  data: { roomId: string; userId: string }
+): Promise<void> => {
+  try {
+    const { roomId, userId } = data;
+
+    const room: GameRoom = await redisClient.get(`room:${roomId}`);
+    if (!room) {
+      socket.emit("error", { message: "Room not found" });
+      return;
+    }
+
+    if (room.gameStarted) {
+      socket.emit("error", { message: "Game has already started" });
+      return;
+    }
+
+    if (room.createdBy !== userId) {
+      socket.emit("error", { message: "Only the room creator can start the game" });
+      return;
+    }
+
+    if (room.players.length < 2) {
+      socket.emit("error", { message: "At least 2 players are required to start the game" });
+      return;
+    }
+
+    const turnOrder = room.players.map((player: Player) => player.userId);
+    const pieces: Record<string, PiecePosition[]> = {};
+
+    turnOrder.forEach((id) => {
+      pieces[id] = [
+        { id: 0, position: -1, isHome: true, isFinished: false },
+        { id: 1, position: -1, isHome: true, isFinished: false },
+        { id: 2, position: -1, isHome: true, isFinished: false },
+        { id: 3, position: -1, isHome: true, isFinished: false },
+      ];
+    });
+
+    const gameState: GameState = {
+      currentTurn: turnOrder[0],
+      diceValue: 0,
+      pieces,
+      turnOrder,
+      currentPlayerIndex: 0,
+      gamePhase: GamePhase.Rolling,
+    };
+
+    room.gameStarted = true;
+    room.gameState = gameState;
+
+    await redisClient.set(`room:${roomId}`, room);
+
+    io.to(roomId).emit("start_game", {
+      roomId,
+      gameState,
+      players: room.players,
+      message: "Game started by room creator!",
+    });
+
+    console.log(`Room ${roomId}: Game started by ${userId}`);
+  } catch (error) {
+    console.error("Error starting game:", error);
+    socket.emit("error", { message: "Error starting game" });
+  }
+};
+
