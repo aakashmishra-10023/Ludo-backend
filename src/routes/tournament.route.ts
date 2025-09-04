@@ -36,7 +36,7 @@ class TournamentRouter {
             players: [],
             rooms: [],
             maxPlayersPerRoom,
-            status: "JOINING",
+            status: TOURNAMENT_STATUSES.JOINING as "JOINING" | "IN_PROGRESS" | "COMPLETED",
             currentRound: 0,
           };
 
