@@ -1,8 +1,10 @@
+import { TOURNAMENT_STATUSES } from "src/constants/tournament.constants";
+
 export interface Tournament {
     tournamentId: string;
     name: string;
     createdBy: string;
-    status: 'JOINING' | 'IN_PROGRESS' | 'COMPLETED';
+    status: TOURNAMENT_STATUSES;
     joiningOpen: boolean;
     maxPlayersPerRoom: number;
     currentRound: number;
