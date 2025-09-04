@@ -6,4 +6,7 @@ const connection = new IORedis({
   port: 6379,
 });
 
-export const tournamentQueue = new Queue('tournamentQueue', { connection });
+export const tournamentQueue = new Queue('tournamentQueue', { 
+  connection,
+  prefix: 'bull:{tournament}'
+ });
