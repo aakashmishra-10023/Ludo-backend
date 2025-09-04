@@ -9,6 +9,8 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   REDIS_URL: z.string().optional(),
+  REDIS_HOST: z.string().default('127.0.0.1'),
+  REDIS_PORT: z.string().default('6379'),
 });
 
 const _env = envSchema.safeParse(process.env);
