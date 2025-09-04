@@ -52,7 +52,7 @@ export const worker = () =>
               const jobToRemove = schedulers.find(
                 (job) => job.id === `matchMonitioring-${tournamentId}`
               );
-          
+
               if (jobToRemove) {
                 await tournamentQueue.removeJobScheduler(jobToRemove.id);
                 console.log(
@@ -65,9 +65,11 @@ export const worker = () =>
                 err.message
               );
             }
-            console.log(`All rooms finished for tournament ${tournamentId}. Proceeding to next round.`);
+            console.log(
+              `All rooms finished for tournament ${tournamentId}. Proceeding to next round.`
+            );
             await proceedToNextRound(tournamentId, SocketService.getIO());
-            return; 
+            return;
           } else {
             console.log(
               `Not all rooms finished for tournament ${tournamentId}, re-adding match monitoring job.`
@@ -89,16 +91,16 @@ export const worker = () =>
         }
       } catch (error) {
         console.error(`Job ${job.id} failed:`, error);
-        throw error; // Mark job as failed
+        throw error; 
       }
     },
     {
-      connection: {
-        host: parsed.hostname,
-        port: Number(parsed.port),
-        username: parsed.username || undefined,
-        password: parsed.password || undefined,
-        tls: parsed.protocol === "rediss:" ? {} : undefined,
-      },
+      connection: env.REDIS_URL
+        ? { url: env.REDIS_URL } 
+        : {
+            host: env.REDIS_HOST,
+            port: Number(env.REDIS_PORT),
+          },
+      prefix: "bull:{tournament}",
     }
   );

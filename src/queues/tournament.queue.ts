@@ -14,4 +14,7 @@ const connection = new IORedis({
   tls: parsed.protocol === "rediss:" ? {} : undefined,
 });
 
-export const tournamentQueue = new Queue("tournamentQueue", { connection });
+export const tournamentQueue = new Queue('tournamentQueue', { 
+  connection,
+  prefix: 'bull:{tournament}'
+ });
