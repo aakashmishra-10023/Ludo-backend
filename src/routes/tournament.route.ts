@@ -48,7 +48,7 @@ class TournamentRouter {
             "closeJoiningAndStart",
             { tournamentId },
             {
-              delay: 2 * 60 * 1000,
+              delay: 60 * 60 * 1000,
               jobId: tournamentId, 
               // removeOnComplete: true, 
               // removeOnFail: true, 
