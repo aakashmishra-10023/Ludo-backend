@@ -31,7 +31,12 @@ export async function createRoom(data: z.infer<typeof createRoomSchema>) {
   return room;
 }
 
-export async function joinRoom(roomId: string, player: any, password?: string) {
+export async function joinRoom(
+  roomId: string,
+  player: any,
+  password?: string,
+  avatarUrl?: string
+) {
   const room = await Room.findOne({ roomId });
   if (!room) throw new Error("Room not found");
   if (room.players.length >= room.maxPlayers) throw new Error("Room is full");
